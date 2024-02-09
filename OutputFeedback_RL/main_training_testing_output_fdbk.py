@@ -44,10 +44,10 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 #------------ For PCA 
 from numpy import linalg as LA
 import scipy.io as sio
-data = sio.loadmat('PCA_DFN_info.mat')
-data_mu = data['time_states_mu']
-data_std = data['time_states_std']
-data_PCA = data['PCA_trans']
+# data = sio.loadmat('PCA_DFN_info.mat')
+# data_mu = data['time_states_mu']
+# data_std = data['time_states_std']
+# data_PCA = data['PCA_trans']
 
 
 # normalize states of the system
@@ -162,8 +162,8 @@ def ddpg(n_episodes=3000, i_training=1):
     torch.save(agent.critic_optimizer.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
 
     # Evaluate the initial (untrained) policy
-    print('Evaluate first')
-    evaluations = [eval_policy(agent)]
+    # print('Evaluate first')
+    # evaluations = [eval_policy(agent)]
     # ipdb.set_trace()
     # evaluations = []
 
@@ -211,6 +211,7 @@ def ddpg(n_episodes=3000, i_training=1):
             SOCn_VEC.append(env.info['SOCn'])
             CURRENT_VEC.append(applied_action)
             ETAs_VEC.append(env.etasLn)
+            print(i_episode, applied_action, next_voltage, next_soc,reward)
             #update the agent according to norm_states, norm_next_states, reward, and norm_action
             agent.step(norm_out, norm_action, reward, norm_next_out, done)
             try:
@@ -248,19 +249,64 @@ def ddpg(n_episodes=3000, i_training=1):
 
         if (i_episode % settings['periodic_test']) == 0 :
             # Perform evaluation test
-            evaluations.append(eval_policy(agent))
-            try:
-                os.makedirs('results/testing_results/training'+str(i_training))
-            except:
-                pass
+            # evaluations.append(eval_policy(agent))
+            # try:
+            #     os.makedirs('results/testing_results/training'+str(i_training))
+            # except:
+            #     pass
             
-            np.save('results/testing_results/training'+str(i_training)+'/eval.npy',evaluations)
+            # np.save('results/testing_results/training'+str(i_training)+'/eval.npy',evaluations)
+            ACTION = policy_heatmap(agent, episode_number = i_episode)
                        
     return scores_list, checkpoints_list
 
+def policy_heatmap(agent, T = 300, episode_number = 0):
+    print("------------------------------------------------")
+    print("Generating Heatmap of Policy with T = "+ str(T))
+    print("------------------------------------------------")
 
+    SOC_grid = np.linspace(0,1,10)
+    V_grid = np.linspace(3.7,4.7,10)
 
+    ACTION = np.zeros((len(SOC_grid)))
 
+    for V in V_grid:
+        ACTION_I = np.array([])
+        for soc in SOC_grid:
+
+            norm_out = normalize_outputs(soc,V,T)
+            action = agent.act(norm_out, add_noise = False)
+            applied_action = denormalize_input(action, env.action_space.low[0], env.action_space.high[0])
+
+            ACTION_I = np.hstack((ACTION_I, applied_action))
+
+        ACTION = np.vstack((ACTION_I, ACTION))
+
+    ACTION = ACTION[:-1]
+
+    nx = SOC_grid.shape[0]
+    no_labels_x = nx # how many labels to see on axis x
+    step_x = int(nx / (no_labels_x - 1)) # step between consecutive labels
+    x_positions = np.arange(0,nx,step_x) # pixel count at label position
+
+    ny = V_grid.shape[0]
+    no_labels_y = ny # how many labels to see on axis x
+    step_y = int(ny / (no_labels_y - 1)) # step between consecutive labels
+    y_positions = np.arange(0,ny,step_x) # pixel count at label position
+
+    
+    plt.clf()
+    plt.imshow(ACTION, interpolation='nearest')
+    plt.colorbar()
+    plt.xticks(x_positions, np.trunc(100*SOC_grid)/100)
+    plt.yticks(y_positions, np.trunc(100*np.flip(V_grid))/100)
+    plt.tight_layout()
+    plt.title('RL Policy, T = ' + str(T) + ' Episode '+ str(episode_number))
+    plt.xlabel('SOC')
+    plt.ylabel('Voltage (V)')
+    plt.show()
+    plt.savefig('Policy_Episode'+str(episode_number)+'.png')
+    return ACTION
 
 
 #-------------------------------------------------------------------------------------
@@ -270,14 +316,15 @@ initial_conditions={}
 
 # assign the environment
 env = DFN(sett=settings, cont_sett=control_settings)
-
+print("Theoretical Battery Capacity (Ah): ", env.OneC)
 # parser
-parser = argparse.ArgumentParser()
-parser.add_argument('--id', type = int)
-args = parser.parse_args()
+# parser = argparse.ArgumentParser()
+# parser.add_argument('--id', type = int)
+# args = parser.parse_args()
 
 # Seeding
-i_seed = args.id
+# i_seed = args.id
+i_seed = 0
 i_training = i_seed
 np.random.seed(i_seed)
 torch.manual_seed(i_seed)
@@ -289,6 +336,15 @@ total_returns_list_with_exploration=[]
 #-------------------------------------------------------------------------------------
 #assign the agent which is a ddpg
 agent = Agent(state_size=3, action_size=1, random_seed=i_training)  # the number of state is 496.
+
+start_episode = 1500
+if start_episode !=0:
+    agent.actor_local.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_'+str(start_episode)+'.pth',map_location = 'cpu'))
+    agent.actor_optimizer.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_optimizer_'+str(start_episode)+'.pth',map_location = 'cpu'))
+    agent.critic_local.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_'+str(start_episode)+'.pth',map_location = 'cpu'))
+    agent.critic_optimizer.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_optimizer_'+str(start_episode)+'.pth', map_location = 'cpu'))
+
+ACTION = policy_heatmap(agent, episode_number = start_episode)
 
 # call the function for training the agent
 returns_list, checkpoints_list = ddpg(n_episodes=settings['number_of_training_episodes'], i_training=i_training)

@@ -97,7 +97,8 @@ p['T_ref'] = 298.15 # [K] for ElectrolyteACT
 #==============================================================================
 p['R'] = 8.314472;      # Gas constant, [J/mol-K]
 p['Faraday'] = 96485.3329  # Faraday constant [Coulombs/mol]
-p['Area'] = 1.425      # Electrode current collector area [m^2]
+# p['Area'] = 1.425      # Electrode current collector area [m^2]
+p['Area'] = 0.1283      # Electrode current collector area [m^2]
 p['alph'] = 0.5         # Charge transfer coefficients
 p['t_plus'] = 0.45		# Transference number
 p['brug'] = 1.8		# Bruggeman porosity
@@ -107,7 +108,8 @@ p['brug'] = 1.8		# Bruggeman porosity
 
 p['c_s_n_max'] = 3.0e+04 # Max concentration in anode, [mol/m^3]
 p['c_s_p_max'] = 4.5e+04 # Max concentration in cathode, [mol/m^3]
-p['n_Li_s'] = 3.0 # Total moles of lithium in solid phase [mol]
+# p['n_Li_s'] = 3.0 # Total moles of lithium in solid phase [mol]
+p['n_Li_s'] = 3.0*p['Area']/1.425 # Total moles of lithium in solid phase [mol]
 p['c_e0'] = 1.0e3    # Electrolyte concentration [mol/m^3]
 
 # Stoichimetry points
