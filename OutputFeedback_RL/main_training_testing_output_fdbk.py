@@ -170,7 +170,7 @@ def ddpg(n_episodes=3000, i_training=1):
     for i_episode in range(1, n_episodes+1):
 #            
         #random initial values
-        initial_conditions['init_v']=np.random.uniform(low=3.5, high=3.7)
+        initial_conditions['init_v']=np.random.uniform(low=2.7, high=4.1)
         initial_conditions['init_t']=np.random.uniform(low=298, high=305)
 
         # reset the environment and the agent
