@@ -67,6 +67,8 @@ p['R_f_n'] = 5.5e-3 # [CCTA-Adaption case study: 1e-4]       # Resistivity of SE
 p['R_f_p'] = 0 # [CCTA-Adaption case study: 1e-4]       # Resistivity of SEI layer, [Ohms*m^2]
 #p.R_c = 2.5e-03;%5.1874e-05/p.Area; % Contact Resistance/Current Collector Resistance, [Ohms-m^2]
 
+p['U_sr'] = 0.21 #Side-Reaction Equilibrium Potential
+
 # Nominal Reaction rates
 p['k_n0'] = 4.0e-05  # Reaction rate in neg. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
 p['k_p0'] = 2.5e-06  # Reaction rate in pos. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
