@@ -62,6 +62,8 @@ p['sig_p'] = 0.1  # Conductivity of solid in pos. electrode, [1/Ohms*m]
 # Kinetic params
 #==============================================================================
 p['R_f_n'] = 0 # [CCTA-Adaption case study: 1e-4]       # Resistivity of SEI layer, [Ohms*m^2]
+p['R_f_n'] = 5.5e-3 # [CCTA-Adaption case study: 1e-4]       # Resistivity of SEI layer, [Ohms*m^2]
+
 p['R_f_p'] = 0 # [CCTA-Adaption case study: 1e-4]       # Resistivity of SEI layer, [Ohms*m^2]
 #p.R_c = 2.5e-03;%5.1874e-05/p.Area; % Contact Resistance/Current Collector Resistance, [Ohms-m^2]
 

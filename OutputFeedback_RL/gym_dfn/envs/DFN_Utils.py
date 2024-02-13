@@ -324,7 +324,7 @@ def dae_dfn_casadi_pade(x, z, u, p):
 
   c_e0n = c_ex[0]
   c_e0p = c_ex[-1]
-  eta_s_Ln = phi_s_n_bcs[1] - phi_e[Nn+1] #-F*Rf*jn
+  eta_s_Ln = phi_s_n_bcs[1] - phi_e[Nn+1] - p['Faraday']*p['R_f_n']*jn[-1] #-F*Rf*jn
   
   check1 = vertcat(phi_s_n-phi_e[0:Nn],eta_s_Ln)
 
