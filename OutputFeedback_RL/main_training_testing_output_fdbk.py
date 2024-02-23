@@ -84,7 +84,7 @@ def eval_policy(policy, eval_episodes=10):
 
     for _ in range(eval_episodes):
 
-        initial_conditions['init_v'] = np.random.uniform(low=3.5, high=3.7)
+        initial_conditions['init_v'] = np.random.uniform(low=2.7, high=4.1)
         initial_conditions['init_t'] = np.random.uniform(low=298, high=305)
 
         state, done = eval_env.reset(init_v=initial_conditions['init_v'],init_t=initial_conditions['init_t']), False
@@ -162,8 +162,8 @@ def ddpg(n_episodes=3000, i_training=1):
     torch.save(agent.critic_optimizer.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
 
     # Evaluate the initial (untrained) policy
-    # print('Evaluate first')
-    # evaluations = [eval_policy(agent)]
+    print('Evaluate first')
+    evaluations = [eval_policy(agent)]
     # ipdb.set_trace()
     # evaluations = []
 
@@ -211,7 +211,7 @@ def ddpg(n_episodes=3000, i_training=1):
             SOCn_VEC.append(env.info['SOCn'])
             CURRENT_VEC.append(applied_action)
             ETAs_VEC.append(env.etasLn)
-            print(i_episode, applied_action, next_voltage, next_soc,reward)
+            print(i_episode, applied_action, next_voltage, next_soc, next_temperature.item(), env.etasLn, reward)
             #update the agent according to norm_states, norm_next_states, reward, and norm_action
             agent.step(norm_out, norm_action, reward, norm_next_out, done)
             try:
@@ -248,15 +248,16 @@ def ddpg(n_episodes=3000, i_training=1):
             torch.save(agent.critic_optimizer.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
 
         if (i_episode % settings['periodic_test']) == 0 :
-            # Perform evaluation test
-            # evaluations.append(eval_policy(agent))
-            # try:
-            #     os.makedirs('results/testing_results/training'+str(i_training))
-            # except:
-            #     pass
-            
-            # np.save('results/testing_results/training'+str(i_training)+'/eval.npy',evaluations)
+
             ACTION = policy_heatmap(agent, episode_number = i_episode)
+
+            # Perform evaluation test
+            evaluations.append(eval_policy(agent))
+            try:
+                os.makedirs('results/testing_results/training'+str(i_training))
+            except:
+                pass
+            np.save('results/testing_results/training'+str(i_training)+'/eval.npy',evaluations)
                        
     return scores_list, checkpoints_list
 
@@ -337,14 +338,14 @@ total_returns_list_with_exploration=[]
 #assign the agent which is a ddpg
 agent = Agent(state_size=3, action_size=1, random_seed=i_training)  # the number of state is 496.
 
-start_episode = 1500
+start_episode = 0
 if start_episode !=0:
     agent.actor_local.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_'+str(start_episode)+'.pth',map_location = 'cpu'))
     agent.actor_optimizer.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_optimizer_'+str(start_episode)+'.pth',map_location = 'cpu'))
     agent.critic_local.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_'+str(start_episode)+'.pth',map_location = 'cpu'))
     agent.critic_optimizer.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_optimizer_'+str(start_episode)+'.pth', map_location = 'cpu'))
 
-ACTION = policy_heatmap(agent, episode_number = start_episode)
+ACTION = policy_heatmap(agent, episode_number = 1500)
 
 # call the function for training the agent
 returns_list, checkpoints_list = ddpg(n_episodes=settings['number_of_training_episodes'], i_training=i_training)

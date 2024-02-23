@@ -298,7 +298,7 @@ class DFN(discrete.DiscreteEnv):
 		if self.discrete:
 			return spaces.Discrete(20)
 		else: # continuous case.
-			return spaces.Box(dtype=np.float32, low=-2.5*self.OneC, high=0, shape=(1,))
+			return spaces.Box(dtype=np.float32, low=-2.5*self.OneC, high=-0.*self.OneC, shape=(1,))
 
 
 	def seed(self, seed=None):
@@ -406,7 +406,8 @@ class DFN(discrete.DiscreteEnv):
 		r_temp = -5 * abs(self.Temp[0] - self.cont_sett['constraints']['temperature']['max']) if self.Temp[0] > self.cont_sett['constraints']['temperature']['max'] else 0
 		
 		
-		r_etas = -100 * abs(self.etasLn[0] - self.cont_sett['constraints']['etasLn']['min']) if self.etasLn[0] < self.cont_sett['constraints']['etasLn']['min'] else 0
+		r_etas = -1 * abs(self.etasLn[0] - self.cont_sett['constraints']['etasLn']['min']) if self.etasLn[0] < self.cont_sett['constraints']['etasLn']['min'] else 0
+		# r_etas = 0.1*self.etasLn[0]
 		r_volt = -100 * abs(self.V - self.cont_sett['constraints']['voltage']['max']) if self.V > self.cont_sett['constraints']['voltage']['max'] else 0
 		r_step = -0.1
 		
