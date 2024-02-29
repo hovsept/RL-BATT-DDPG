@@ -14,7 +14,7 @@ settings['episodes_number_test']=10 # Number of testing.
 #reference for the state of charge
 control_settings={}
 control_settings['references']={}
-control_settings['references']['soc']=0.8; 
+control_settings['references']['soc']=0.9; 
 
 
 # constraints    

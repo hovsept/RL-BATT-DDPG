@@ -162,8 +162,8 @@ def ddpg(n_episodes=3000, i_training=1):
     torch.save(agent.critic_optimizer.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
 
     # Evaluate the initial (untrained) policy
-    print('Evaluate first')
-    evaluations = [eval_policy(agent)]
+    # print('Evaluate first')
+    # evaluations = [eval_policy(agent)]
     # ipdb.set_trace()
     # evaluations = []
 
@@ -252,12 +252,12 @@ def ddpg(n_episodes=3000, i_training=1):
             ACTION = policy_heatmap(agent, episode_number = i_episode)
 
             # Perform evaluation test
-            evaluations.append(eval_policy(agent))
-            try:
-                os.makedirs('results/testing_results/training'+str(i_training))
-            except:
-                pass
-            np.save('results/testing_results/training'+str(i_training)+'/eval.npy',evaluations)
+            # evaluations.append(eval_policy(agent))
+            # try:
+            #     os.makedirs('results/testing_results/training'+str(i_training))
+            # except:
+            #     pass
+            # np.save('results/testing_results/training'+str(i_training)+'/eval.npy',evaluations)
                        
     return scores_list, checkpoints_list
 
@@ -267,7 +267,7 @@ def policy_heatmap(agent, T = 300, episode_number = 0):
     print("------------------------------------------------")
 
     SOC_grid = np.linspace(0,1,10)
-    V_grid = np.linspace(3.7,4.7,10)
+    V_grid = np.linspace(2.7,4.7,10)
 
     ACTION = np.zeros((len(SOC_grid)))
 
@@ -305,8 +305,8 @@ def policy_heatmap(agent, T = 300, episode_number = 0):
     plt.title('RL Policy, T = ' + str(T) + ' Episode '+ str(episode_number))
     plt.xlabel('SOC')
     plt.ylabel('Voltage (V)')
-    plt.show()
-    plt.savefig('Policy_Episode'+str(episode_number)+'.png')
+    # plt.show()
+    plt.savefig('Policy_Episode'+str(episode_number)+'.png', bbox_inches='tight')
     return ACTION
 
 
@@ -340,10 +340,10 @@ agent = Agent(state_size=3, action_size=1, random_seed=i_training)  # the number
 
 start_episode = 0
 if start_episode !=0:
-    agent.actor_local.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_'+str(start_episode)+'.pth',map_location = 'cpu'))
-    agent.actor_optimizer.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_optimizer_'+str(start_episode)+'.pth',map_location = 'cpu'))
-    agent.critic_local.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_'+str(start_episode)+'.pth',map_location = 'cpu'))
-    agent.critic_optimizer.load_state_dict(torch.load('results/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_optimizer_'+str(start_episode)+'.pth', map_location = 'cpu'))
+    agent.actor_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_'+str(start_episode)+'.pth',map_location = 'cpu'))
+    agent.actor_optimizer.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_optimizer_'+str(start_episode)+'.pth',map_location = 'cpu'))
+    agent.critic_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_'+str(start_episode)+'.pth',map_location = 'cpu'))
+    agent.critic_optimizer.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_optimizer_'+str(start_episode)+'.pth', map_location = 'cpu'))
 
 ACTION = policy_heatmap(agent, episode_number = 1500)
 

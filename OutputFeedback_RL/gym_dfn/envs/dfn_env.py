@@ -146,6 +146,9 @@ class DFN(discrete.DiscreteEnv):
 		self.jn0 = np.zeros(self.Nn)
 		self.jp0 = np.zeros(self.Np)
 
+		#Side-Reaction Flux (Added by Hov)
+		self.j_sr0 = np.zeros(self.Nn)
+
 
 		## Integrate initial condition
 		self.x_init = vertcat(self.c_s_n,self.c_s_p,self.c_ex, self.T0) # Pade
@@ -153,7 +156,7 @@ class DFN(discrete.DiscreteEnv):
 
 		self.state = self.x_init
 
-		self.z_init = vertcat(self.phi_s_n0,self.phi_s_p0,self.i_en0,self.i_ep0,self.phi_e0,self.jn0,self.jp0)
+		self.z_init = vertcat(self.phi_s_n0,self.phi_s_p0,self.i_en0,self.i_ep0,self.phi_e0,self.jn0,self.jp0,self.j_sr0)
 		self.z_state = self.z_init.full()
 		self.nLis = p['epsilon_s_n'] * p['L_n'] * p['Area'] * self.csn0 + p['epsilon_s_p'] * p['L_p'] * p['Area'] * self.csp0
 		
@@ -178,8 +181,9 @@ class DFN(discrete.DiscreteEnv):
 		self.z4 = SX.sym("z4", self.phi_e0.size)
 		self.z5 = SX.sym("z5", self.jn0.size)
 		self.z6 = SX.sym("z6", self.jp0.size)
+		self.z7 = SX.sym("z7", self.j_sr0.size)
 
-		self.z = vertcat(self.z0,self.z1,self.z2,self.z3,self.z4,self.z5,self.z6)
+		self.z = vertcat(self.z0,self.z1,self.z2,self.z3,self.z4,self.z5,self.z6,self.z7)
 
 		# Input
 		# self.u = vertcat(self.u0,self.u1)
@@ -243,6 +247,7 @@ class DFN(discrete.DiscreteEnv):
 		self.out_phie_idx = range((p['Nxn']-1 + p['Nxp']-1 + p['Nxn']-1 + p['Nxp']-1 + 1) -1 ,  (p['Nxn']-1 + p['Nxp']-1 + p['Nxn']-1 + p['Nxp']-1 + (p['Nxn']-1 + p['Nxs']-1 + p['Nxp']-1)+2))  # Why 2? not 4?? used to plus 4 to consider boundary conditions.
 		self.out_jn_idx = range((p['Nxn']-1 + p['Nxp']-1 + p['Nxn']-1 + p['Nxp']-1 + (p['Nxn']-1 + p['Nxs']-1 + p['Nxp']-1 + 2) + 1) -1 ,  (p['Nxn']-1 + p['Nxp']-1 + p['Nxn']-1 + p['Nxp']-1 + (p['Nxn']-1 + p['Nxs']-1 + p['Nxp']-1 + 2) + (p['Nxn']-1)))
 		self.out_jp_idx = range((p['Nxn']-1 + p['Nxp']-1 + p['Nxn']-1 + p['Nxp']-1 + (p['Nxn']-1 + p['Nxs']-1 + p['Nxp']-1 + 2) + (p['Nxn']-1) +1) -1 ,  (p['Nxn']-1 + p['Nxp']-1 + p['Nxn']-1 + p['Nxp']-1 + (p['Nxn']-1 + p['Nxs']-1 + p['Nxp']-1+ 2) + (p['Nxn']-1) + (p['Nxp']-1)))
+		self.out_j_sr_idx = range((p['Nxn']-1 + p['Nxp']-1 + p['Nxn']-1 + p['Nxp']-1 + (p['Nxn']-1 + p['Nxs']-1 + p['Nxp']-1+ 2) + (p['Nxn']-1) + (p['Nxp']-1)) , (p['Nxn']-1 + p['Nxp']-1 + p['Nxn']-1 + p['Nxp']-1 + (p['Nxn']-1 + p['Nxs']-1 + p['Nxp']-1+ 2) + (p['Nxn']-1) + (p['Nxp']-1)) + p['Nxn']-1)
 		
 		#==============================================================================
 		# GYM Output
@@ -383,6 +388,7 @@ class DFN(discrete.DiscreteEnv):
 		self.out_phie = self.z_state[self.out_phie_idx]
 		self.out_jn = self.z_state[self.out_jn_idx]
 		self.out_jp = self.z_state[self.out_jp_idx]
+		self.out_j_sr = self.z_state[self.out_j_sr_idx]
 
 		self.theta_n0 = p['cn0']/p['c_s_n_max']
 		self.theta_n100 = p['cn100']/p['c_s_n_max']# x100, Cell SOC 100

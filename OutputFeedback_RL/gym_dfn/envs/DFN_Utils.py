@@ -71,6 +71,7 @@ def dae_dfn_casadi_pade(x, z, u, p):
   # Molar flux
   jn = z[range(2*Nnp + Nx +2,  2*Nnp + Nx +2 + Nn)]
   jp = z[range(2*Nnp + Nx +2 + Nn, 2*Nnp + Nx +2 + Nn + Np)]
+  j_sr = z[range(2*Nnp + Nx +2 + Nn + Np, 2*Nnp + Nx +2 + Nn + Np + Nn)]
 
   # Input
   Cur = u
@@ -285,13 +286,15 @@ def dae_dfn_casadi_pade(x, z, u, p):
   Upref = refPotentialCathode_casadi(theta_p)
 
   # Overpotential : \eta
-  eta_n = phi_s_n - phi_e[0:Nn] - Unref - p['Faraday']*p['R_f_n']*jn
+  eta_n = phi_s_n - phi_e[0:Nn] - Unref - p['Faraday']*p['R_f_n']*(jn + j_sr)
   eta_p = phi_s_p - phi_e[Nn+Ns+2 : ] - Upref - p['Faraday']*p['R_f_p']*jp
+  eta_sr = phi_s_n - phi_e[0:Nn] - p['U_sr'] - p['Faraday']*p['R_f_n']*(jn+j_sr)
 
 
   # Algebraic eqns (semi-explict form)
   jn_dot = 2/p['Faraday'] * i_0n * sinh(aFRT * eta_n) - jn
   jp_dot = 2/p['Faraday'] * i_0p * sinh(aFRT * eta_p) - jp
+  j_sr_dot = -p['i0_sr']/p['Faraday'] * np.exp(-2*aFRT * eta_sr) - j_sr
 
   # check1 = eta_p
   #==============================================================================
@@ -324,7 +327,7 @@ def dae_dfn_casadi_pade(x, z, u, p):
 
   c_e0n = c_ex[0]
   c_e0p = c_ex[-1]
-  eta_s_Ln = phi_s_n_bcs[1] - phi_e[Nn+1] - p['U_sr']
+  eta_s_Ln = eta_sr[-1]
   
   check1 = vertcat(phi_s_n-phi_e[0:Nn],eta_s_Ln)
 
@@ -333,11 +336,11 @@ def dae_dfn_casadi_pade(x, z, u, p):
   #==============================================================================
 
   f = vertcat(c_s_n_dot,c_s_p_dot,c_e_dot, T1_dot)
-  g = vertcat(phi_sn_dot,phi_sp_dot,i_en_dot,i_ep_dot,phi_e_dot,jn_dot,jp_dot)
+  g = vertcat(phi_sn_dot,phi_sp_dot,i_en_dot,i_ep_dot,phi_e_dot,jn_dot,jp_dot,j_sr_dot)
   L = Volt
 
   f_out = vertcat(c_s_n,c_s_p,T1)
-  g_out = vertcat(phi_s_n,phi_s_p,i_en,i_ep,phi_e,jn,jp)
+  g_out = vertcat(phi_s_n,phi_s_p,i_en,i_ep,phi_e,jn,jp,j_sr)
   alg_out = vertcat(c_ss_n_mat,c_ss_p_mat,c_ex, c_avg_n, c_avg_p, eta_n, eta_p, c_e0n, c_e0p, eta_s_Ln, Volt, n_Li_s, n_Li_e, i_0n, i_0p)
   param_out = vertcat(D_en, dD_en, D_es, dD_es, D_ep, dD_ep)
 
