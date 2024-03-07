@@ -152,7 +152,7 @@ def dae_dfn_casadi_pade(x, z, u, p):
   # Compute derivative
   c_en_dot = dD_en_eff * (mtimes(M1n,c_en) + mtimes(M2n,c_e_bcs[range(0,2)]))**2 \
       + D_en_eff * (mtimes(M3n,c_en) + mtimes(M4n,c_e_bcs[range(0,2)])) \
-      + mtimes(M5n,jn)
+      + mtimes(M5n,jn+j_sr)
 
   c_es_dot = dD_es_eff * (mtimes(M1s,c_es) + mtimes(M2s,c_e_bcs[range(1,3)]))**2 \
       + D_es_eff * (mtimes(M3s,c_es) + mtimes(M4s,c_e_bcs[range(1,3)]))
@@ -193,7 +193,7 @@ def dae_dfn_casadi_pade(x, z, u, p):
   F1_ien, F1_iep, F2_ien, F2_iep, F3_ien, F3_iep = i_e_mats(p)
 
   # Electrolyte Current: i_e(x,t)
-  i_en_dot = mtimes(F1_ien,i_en) + mtimes(F2_ien,jn) + mtimes(F3_ien,Cur)
+  i_en_dot = mtimes(F1_ien,i_en) + mtimes(F2_ien,jn+j_sr) + mtimes(F3_ien,Cur)
   i_ep_dot = mtimes(F1_iep,i_ep) + mtimes(F2_iep,jp) + mtimes(F3_iep,Cur)
 
   # Electrolyte current across all three regions

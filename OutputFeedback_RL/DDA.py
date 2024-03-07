@@ -1,4 +1,4 @@
-#SPM Data-Driven Abstraction
+#Data-Driven Abstraction
 #Hovsep Touloujian - Dec 8th 2023
 import numpy as np
 from tqdm import tqdm
@@ -43,13 +43,13 @@ agent = Agent(state_size=3, action_size=1, random_seed=1)
 # Load
 i_episode=1500
 
-print('-'*80)
-print('Episode ', i_episode)
-print('-'*80)
-
-i_training=0
+i_training=1
 agent.actor_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth',map_location='cpu'))
 agent.critic_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth',map_location='cpu'))
+
+print('-'*80)
+print('Episode ', i_episode, ', Training ', i_training)
+print('-'*80)
 
 def policy_heatmap(agent, T = 300, max_current = -2.5*3.4, min_current = 0.):
     print("------------------------------------------------")
@@ -104,7 +104,7 @@ def trajectory(agent, H):
     env = DFN(sett=settings, cont_sett=control_settings)
 
     init_V=np.random.uniform(low=2.7, high=4.1)
-    init_T=np.random.uniform(low=298, high=305)
+    init_T=np.random.uniform(low=290, high=305)
     _ = env.reset(init_v = init_V, init_t=init_T)
     soc, voltage, temperature = get_output_observations(env)
     norm_out = normalize_outputs(soc,voltage,temperature)
@@ -131,6 +131,7 @@ def trajectory(agent, H):
     iep_sim = []
     jn_sim =[]
     jp_sim = []
+    j_sr_sim = []
     phi_e_sim = []
 
     tt=0
@@ -172,6 +173,7 @@ def trajectory(agent, H):
         iep_sim.append(env.out_iep)
         jn_sim.append(env.out_jn)
         jp_sim.append(env.out_jp)
+        j_sr_sim.append(env.out_j_sr)
         phi_e_sim.append(env.out_phie)
 
         tt += env.dt
@@ -182,7 +184,13 @@ def trajectory(agent, H):
         if done:
             break
 
-    traj = np.vstack((np.array(SOC_VEC), np.array(etasLn_sim)[:,0]))
+    traj = np.vstack((np.array(SOC_VEC), np.array(etasLn_sim)[:,0],
+                       np.array(VOLTAGE_VEC), np.array(T_VEC)))
+    traj = np.vstack((np.array(SOC_VEC), np.array(etasLn_sim)[:,0],
+                    np.array(VOLTAGE_VEC)))
+    # traj = np.vstack((np.array(SOC_VEC), np.array([arr[-1] for arr in j_sr_sim]).T))
+    # traj = np.vstack((np.array(SOC_VEC), np.array([arr[-1] for arr in cssn_sim]).T))
+
     while traj.shape[-1]<H:
         traj_x = np.zeros((traj.shape[0], traj.shape[1]+1))
         for i in range(traj.shape[0]):
@@ -192,8 +200,8 @@ def trajectory(agent, H):
     return traj
 
 H = 200
-N = 100
-n_vars = 2
+N = 500
+n_vars = 3
 all_trajs = np.zeros((N,n_vars,H))
 all_time = np.zeros((N))
 
@@ -201,41 +209,68 @@ print('-----------------------------------------------------')
 print('Generating N =', N, 'trajectories of length H =', H)
 print('-----------------------------------------------------')
 
-min_i_s = 0
-SOC_threshold = 0.8
 for i in tqdm(range(N)):
-    all_trajs[i,:,:] = trajectory(agent,H)
+    check = False
+    while check==False:
+        try:
+            all_trajs[i,:,:] = trajectory(agent,H)
+            check=True
+        except:
+            pass
 
 
-#0: Safe Set
-#1: Unsafe Set
-#2: Goal Set
+all_trajs = np.load('traj_training1_ep1500.npy')
 
-def direct_partition(all_trajs, max_i_s, SOC_threshold):
-    all_trajs_part = np.zeros((N,H))
+min_eta_s = -0.03
+SOC_threshold = 0.8
+def direct_partition(all_trajs, min_eta_s, SOC_threshold):
+    all_trajs_part = np.empty((N, H), dtype='U4')
     for i in tqdm(range(N)):
         for j in range(H):
-            if all_trajs[i,0,j] >= SOC_threshold and all_trajs[i,1,j]>= min_i_s:
-                all_trajs_part[i,j] = 2.
-            elif all_trajs[i,0,j] <= SOC_threshold and all_trajs[i,1,j]>= max_i_s:
-                all_trajs_part[i,j] = 0.
+            # soc, eta_sr, V, T = all_trajs[i,0,j], all_trajs[i,1,j], all_trajs[i,2,j], all_trajs[i,3,j]
+            soc, eta_sr, V = all_trajs[i,0,j], all_trajs[i,1,j], all_trajs[i,2,j]
+            if soc<=0.5:
+                soc_part = 'a'
+            elif soc>0.5 and soc <= SOC_threshold:
+                soc_part = 'b'
             else:
-                all_trajs_part[i,j] = 1.
+                soc_part = 'c'
+
+            if eta_sr<= min_eta_s:
+                eta_part = 'a'
+            elif eta_sr > min_eta_s and eta_sr<= 0:
+                eta_part = 'b'
+            elif eta_sr >0 and eta_sr <= -min_eta_s:
+                eta_part = 'c'
+            else:
+                eta_part = 'd'
+
+            if V<=3.0:
+                V_part = 'a'
+            elif V>3.0 and V<=3.7:
+                V_part = 'b'
+            elif V>3.7 and V<=4.2:
+                V_part = 'c'
+            else:
+                V_part = 'd'
+
+            all_trajs_part[i,j] = soc_part + eta_part + V_part
+
 
     return all_trajs_part
 
 print('-----------------------------------------------------')
 print('Partitioning Trajectories')
 print('-----------------------------------------------------')
-all_trajs_part = direct_partition(all_trajs,min_i_s,SOC_threshold)
+all_trajs_part = direct_partition(all_trajs, min_eta_s,SOC_threshold)
 
-unsafe_traj = []
-for i in range(N):
-    if all_trajs_part[i][0] == 0 and 1 in all_trajs_part[i]:
-        unsafe_traj.append(i)
+# unsafe_traj = []
+# for i in range(N):
+#     if all_trajs_part[i][0] == 0 and 1 in all_trajs_part[i]:
+#         unsafe_traj.append(i)
 
 
-ell = 50
+ell = 10
 
 def get_ell_sequences(all_trajs_part, ell,H):
     ell_seq_trajectory = set()
@@ -339,19 +374,53 @@ else:
 
 
 ################################################
-# 2D-Visualization for SOC and i_s trajectories
+# 2D-Visualization for SOC and eta_sr trajectories
 ################################################
 
 fig, ax = plt.subplots()
 for seq in all_trajs[:]:
     ax.plot(seq[0],seq[1])
-    ax.fill_between(seq[0],-0.04, min_i_s, where=seq[0]>=0, color = "lightcoral")
-    ax.fill_between(seq[0],-0.04,min_i_s, where = seq[0]>=SOC_threshold, color = "palegreen")
+    # ax.fill_between(seq[0],-0.04,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
+    # ax.fill_between(seq[0],-0.04, min_eta_s, where = seq[0]>=SOC_threshold, color = "palegreen")
 
 ax.set_xlabel('SOC')
 ax.set_ylabel('eta_sr')
 ax.set_title("N = " + str(N))
+ax.grid()
 fig.tight_layout()
+
+################################################
+# 2D-Visualization for SOC and V trajectories
+################################################
+
+fig, ax = plt.subplots()
+for seq in all_trajs[:]:
+    ax.plot(seq[0],seq[2])
+    # ax.fill_between(seq[0],-0.04,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
+    # ax.fill_between(seq[0],-0.04, min_eta_s, where = seq[0]>=SOC_threshold, color = "palegreen")
+
+ax.set_xlabel('SOC')
+ax.set_ylabel('Voltage (V)')
+ax.set_title("N = " + str(N))
+ax.grid()
+fig.tight_layout()
+
+################################################
+# 2D-Visualization for V and eta_sr trajectories
+################################################
+
+fig, ax = plt.subplots()
+for seq in all_trajs[:]:
+    ax.plot(seq[2],seq[1])
+    # ax.fill_between(seq[0],-0.04,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
+    # ax.fill_between(seq[0],-0.04, min_eta_s, where = seq[0]>=SOC_threshold, color = "palegreen")
+
+ax.set_xlabel('Voltage(V)')
+ax.set_ylabel('eta_sr')
+ax.set_title("N = " + str(N))
+ax.grid()
+fig.tight_layout()
+
 
 ################################################
 # Counterexamples
@@ -361,8 +430,8 @@ fig.tight_layout()
 # for seq in all_trajs[unsafe_traj]:
 #     if seq[1][-1]< seq[1][0]:
 #         ax.plot(seq[0],seq[1])
-#         ax.fill_between(seq[0],4.75*min_i_s, min_i_s, where=seq[0]>=0, color = "lightcoral")
-#         ax.fill_between(seq[0],min_i_s,1e-6, where = seq[0]>=SOC_threshold, color = "palegreen")
+#         ax.fill_between(seq[0],4.75* min_eta_s,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
+#         ax.fill_between(seq[0], min_eta_s,1e-6, where = seq[0]>=SOC_threshold, color = "palegreen")
 
 # ax.set_xlabel('SOC')
 # ax.set_ylabel('i_s')
@@ -377,6 +446,8 @@ print(f'Epsilon Bound using complexity: {epsi_up}')
 
 print('-'*80)
 print('Minimum Reached eta_SR: ', np.min(all_trajs[:,1]))
+
+##################################################
 
 env = DFN(sett=settings, cont_sett=control_settings)
 
@@ -418,4 +489,63 @@ if TIME_VEC[-1] < H*30:
 else:
     print('Time from 2.7V: NOT CHARGED')
 print('-'*80)
+
+############################################################
+# Backwards Reachability
+############################################################
+
+def pre(state, ell_seq_trajectory):
+    #Returns set of ell-sequences that transition to state in one step
+    ell = len(state)
+    pre_state = set()
+    for s in ell_seq_trajectory:
+        if s[1:] == state[:ell-1]:
+            pre_state.add(s)
+    return pre_state
+
+def pre_set(state, ell_seq_trajectory):
+    #Returns set of ell-sequences that transition to state in any number of steps
+    pre_state = pre(state,ell_seq_trajectory)
+    pre_done = {state}
+    pre_old = pre_state
+    while True:
+        for s in pre_state:
+            if s not in pre_done:
+                pre_old = pre_state
+                pre_state = pre_state.union(pre(s,ell_seq_trajectory))
+                pre_done.add(s)
+        
+        if pre_old == pre_state:
+            break
+    return pre_state
+
+def pre_set_init(state,ell_seq_trajectory,ell_seq_init):
+    pre_state = pre_set(state,ell_seq_trajectory)
+    return pre_state.intersection(ell_seq_init)
+
+
+soc_reach, eta_viol, volt_viol = set(), set(), set()
+soc_pre, eta_pre, volt_pre = set(), set(), set()
+
+for s in tqdm(ell_seq_trajectory):
+    if s[-1][0]=='c' and s not in soc_pre:
+        soc_reach.add(s)
+        soc_pre = soc_pre.union(pre_set(s,ell_seq_trajectory))
+    if s[-1][1]=='a' and s not in eta_pre:
+        eta_viol.add(s)
+        eta_pre = eta_pre.union(pre_set(s,ell_seq_trajectory))
+    if s[-1][2]=='d' and s not in volt_pre:
+        volt_viol.add(s)
+        volt_pre = volt_pre.union(pre_set(s,ell_seq_trajectory))
+
+soc_init = soc_pre.intersection(ell_seq_init)
+eta_init = eta_pre.intersection(ell_seq_init)
+volt_init = volt_pre.intersection(ell_seq_init)
+
+        
+
+
+
+
+
 

@@ -45,7 +45,6 @@ p['epsilon_f_p'] = 1 - p['epsilon_s_p'] - p['epsilon_e_p']  # Volume fraction of
 p['a_s_n'] = 3*p['epsilon_s_n'] / p['R_s_n']  # Negative electrode [m^2/m^3]
 p['a_s_p'] = 3*p['epsilon_s_p'] / p['R_s_p']  # Positive electrode [m^2/m^3]
 
-
 #==============================================================================
 # Transport params
 #==============================================================================
@@ -126,7 +125,8 @@ p['cp100'] = 0.2 # y100, Cell SOC 100
 # Discretization params
 #==============================================================================
 p['PadeOrder'] = 3
-
+# p['dr_n'] = p['R_s_n']/(p['PadeOrder']-1)
+# p['dr_p'] = p['R_s_p']/(p['PadeOrder']-1)
 
 p['Nr'] = 30
 p['delta_r_n'] = 1/float(p['Nr'])
@@ -141,6 +141,21 @@ p['delta_x_n'] = 1 / float(p['Nxn'])
 p['delta_x_s'] = 1 / float(p['Nxs'])
 p['delta_x_p'] = 1 / float(p['Nxp'])
 
+#Matrix to compute bulk concentration: c_s_n_bulk = A_bulk_n*c_s_n, same for p
+# p['A_bulk_n'] = np.zeros((p['PadeOrder']-1,p['PadeOrder']))
+# p['A_bulk_p'] = np.zeros((p['PadeOrder']-1,p['PadeOrder']))
+
+# for i in range(p['PadeOrder']-1):
+#     p['A_bulk_n'][i,i] = (p['dr_n']**3)/3 * ((i+1)**3 - i**3) - p['dr_n']**3 /4 * ((i+1)**4 - i**4) + p['dr_n']**3 * i/3 * ((i+1)**3-i**3)
+#     p['A_bulk_n'][i,i+1] = (p['dr_n']**3)/4 * ((i+1)**4 - i**4) - p['dr_n']**3 *i/3 * ((i+1)**3-i**3)
+# p['A_bulk_n'] = 3/p['R_s_n']**3 * np.matmul(np.ones((1,p['PadeOrder']-1)), p['A_bulk_n'])
+
+# for i in range(p['PadeOrder']-1):
+#     p['A_bulk_p'][i,i] = (p['dr_p']**3)/3 * ((i+1)**3 - i**3) - p['dr_p']**3 /4 * ((i+1)**4 - i**4) + p['dr_p']**3 * i/3 * ((i+1)**3-i**3)
+#     p['A_bulk_p'][i,i+1] = (p['dr_p']**3)/4 * ((i+1)**4 - i**4) - p['dr_p']**3 *i/3 * ((i+1)**3-i**3)
+# p['A_bulk_p'] = 3/p['R_s_p']**3 * np.matmul(np.ones((1,p['PadeOrder']-1)), p['A_bulk_p'])
+
+
 #==============================================================================
 # Safety Constraint
 #==============================================================================
@@ -149,13 +164,18 @@ p['volt_max'] = 4.2
 
 
 def refPotentialAnode_casadi(theta):
-
+    #From Park et al.
     Uref = 0.194+1.5*np.exp(-120.0*theta) +0.0351*np.tanh((theta-0.286)/0.083) - 0.0045*np.tanh((theta-0.849)/0.119) - 0.035*np.tanh((theta-0.9233)/0.05) - 0.0147*np.tanh((theta-0.5)/0.034) - 0.102*np.tanh((theta-0.194)/0.142) - 0.022*np.tanh((theta-0.9)/0.0164) - 0.011*np.tanh((theta-0.124)/0.0226) + 0.0155*np.tanh((theta-0.105)/0.029)
 
+    #From Khalik
+    # Uref = 0.7222+0.1387*theta +0.029*theta**0.5 - 0.0172/theta +0.0019/theta**1.5 + 0.2808*np.exp(0.9-15*theta)-0.7984*np.exp(0.4465*theta-0.4108)
     return Uref
 
 def refPotentialCathode_casadi(theta):
 
-
+    #From Park et al.
     Uref = 2.16216+0.07645*np.tanh(30.834-54.4806*theta) + 2.1581*np.tanh(52.294-50.294*theta) - 0.14169*np.tanh(11.0923-19.8543*theta) + 0.2051*np.tanh(1.4684-5.4888*theta) + 0.2531*np.tanh((-theta+0.56478)/0.1316) - 0.02167*np.tanh((theta-0.525)/0.006)
+
+    #From Khalik
+    # Uref = (-4.656+88.669*theta**2-401.119*theta**4+342.909*theta**6-462.471*theta**8+433.434*theta**10)/(-1+18.933*theta**2-79.532*theta**4+37.311*theta**6-73.083*theta**8+95.96*theta**10)
     return Uref

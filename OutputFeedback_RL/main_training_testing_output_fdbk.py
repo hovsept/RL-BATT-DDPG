@@ -152,113 +152,117 @@ def ddpg(n_episodes=3000, i_training=1):
     i_episode = 0
     checkpoints_list.append(i_episode)
     try:
-        os.makedirs('results/training_results/training'+str(i_training)+'/episode'+str(i_episode))
+        os.makedirs('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode))
     except:
         pass
     
-    torch.save(agent.actor_local.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth')
-    torch.save(agent.critic_local.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth')
-    torch.save(agent.actor_optimizer.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_optimizer_'+str(i_episode)+'.pth')
-    torch.save(agent.critic_optimizer.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
+    torch.save(agent.actor_local.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth')
+    torch.save(agent.critic_local.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth')
+    torch.save(agent.actor_optimizer.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_optimizer_'+str(i_episode)+'.pth')
+    torch.save(agent.critic_optimizer.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
 
     # Evaluate the initial (untrained) policy
     # print('Evaluate first')
     # evaluations = [eval_policy(agent)]
     # ipdb.set_trace()
     # evaluations = []
-
+    
     for i_episode in range(1, n_episodes+1):
-#            
-        #random initial values
-        initial_conditions['init_v']=np.random.uniform(low=2.7, high=4.1)
-        initial_conditions['init_t']=np.random.uniform(low=298, high=305)
+        episode_done = False
+        while episode_done == False:
+            try:         
+                #random initial values
+                initial_conditions['init_v']=np.random.uniform(low=2.7, high=4.1)
+                initial_conditions['init_t']=np.random.uniform(low=298, high=305)
 
-        # reset the environment and the agent
-        _=env.reset(init_v=initial_conditions['init_v'], init_t=initial_conditions['init_t'])
-        soc, voltage, temperature = get_output_observations(env)
-        norm_out = normalize_outputs(soc, voltage, temperature)
-        
-        agent.reset() 
-        
-        score = 0
-        done=False
-        cont=0
-        
-        V_VEC=[]
-        T_VEC=[]
-        SOCn_VEC=[]
-        CURRENT_VEC=[]
-        ETAs_VEC=[]
-        while not done or score>control_settings['max_negative_score']:
+                # reset the environment and the agent
+                _=env.reset(init_v=initial_conditions['init_v'], init_t=initial_conditions['init_t'])
+                soc, voltage, temperature = get_output_observations(env)
+                norm_out = normalize_outputs(soc, voltage, temperature)
+                
+                agent.reset() 
+                
+                score = 0
+                done=False
+                cont=0
+                
+                V_VEC=[]
+                T_VEC=[]
+                SOCn_VEC=[]
+                CURRENT_VEC=[]
+                ETAs_VEC=[]
+                while not done or score>control_settings['max_negative_score']:
 
-#            pdb.set_trace()
-            #compute normalized action
-            norm_action = agent.act(norm_out, add_noise=True)
-            
-            #actual action
-            applied_action=denormalize_input(norm_action,
-                                                     env.action_space.low[0],
-                                                     env.action_space.high[0])
-            
-            #apply action
-            _,reward,done,_=env.step(applied_action)
-            next_soc, next_voltage, next_temperature = get_output_observations(env)
-            norm_next_out=normalize_outputs(next_soc, next_voltage, next_temperature.item())
+        #            pdb.set_trace()
+                    #compute normalized action
+                    norm_action = agent.act(norm_out, add_noise=True)
+                    
+                    #actual action
+                    applied_action=denormalize_input(norm_action,
+                                                            env.action_space.low[0],
+                                                            env.action_space.high[0])
+                    
+                    #apply action
+                    _,reward,done,_=env.step(applied_action)
+                    next_soc, next_voltage, next_temperature = get_output_observations(env)
+                    norm_next_out=normalize_outputs(next_soc, next_voltage, next_temperature.item())
 
+                    
+                    V_VEC.append(env.info['V'])
+                    T_VEC.append(env.info['T'])
+                    SOCn_VEC.append(env.info['SOCn'])
+                    CURRENT_VEC.append(applied_action)
+                    ETAs_VEC.append(env.etasLn)
+                    print(i_episode, applied_action, next_voltage, next_soc, next_temperature.item(), env.etasLn, reward)
+                    #update the agent according to norm_states, norm_next_states, reward, and norm_action
+                    agent.step(norm_out, norm_action, reward, norm_next_out, done)
+                    try:
+                        score += reward
+                    except:
+                        pdb.set_trace()    
+                    cont+=1
+                    if done:
+                        break
+                    
+                    norm_out=norm_next_out
+
+                # ipdb.set_trace()
+                print("Training", i_training)
+                print("\rEpisode number ", i_episode)
+                print("reward: ", score)
             
-            V_VEC.append(env.info['V'])
-            T_VEC.append(env.info['T'])
-            SOCn_VEC.append(env.info['SOCn'])
-            CURRENT_VEC.append(applied_action)
-            ETAs_VEC.append(env.etasLn)
-            print(i_episode, applied_action, next_voltage, next_soc, next_temperature.item(), env.etasLn, reward)
-            #update the agent according to norm_states, norm_next_states, reward, and norm_action
-            agent.step(norm_out, norm_action, reward, norm_next_out, done)
-            try:
-                score += reward
+                #save the vector of all the scores
+                scores_list.append(score)
+
+                if (i_episode % settings['periodic_test']) == 0 :
+                #save the checkpoint for actor, critic and optimizer (for loading the agent)
+                
+
+                    checkpoints_list.append(i_episode)
+                    try:
+                        os.makedirs('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode))
+                    except:
+                        pass
+                    
+                    torch.save(agent.actor_local.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth')
+                    torch.save(agent.critic_local.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth')
+                    torch.save(agent.actor_optimizer.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_optimizer_'+str(i_episode)+'.pth')
+                    torch.save(agent.critic_optimizer.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
+
+                if (i_episode % settings['periodic_test']) == 0 :
+
+                    ACTION = policy_heatmap(agent, episode_number = i_episode)
+
+                    # Perform evaluation test
+                    # evaluations.append(eval_policy(agent))
+                    # try:
+                    #     os.makedirs('results/testing_results/training'+str(i_training))
+                    # except:
+                    #     pass
+                    # np.save('results/testing_results/training'+str(i_training)+'/eval.npy',evaluations)
+                episode_done = True
             except:
-                pdb.set_trace()    
-            cont+=1
-            if done:
-                break
-            
-            norm_out=norm_next_out
-
-        # ipdb.set_trace()
-        print("Training", i_training)
-        print("\rEpisode number ", i_episode)
-        print("reward: ", score)
-      
-        #save the vector of all the scores
-        scores_list.append(score)
-
-        if (i_episode % settings['periodic_test']) == 0 :
-        #save the checkpoint for actor, critic and optimizer (for loading the agent)
-        
-
-            checkpoints_list.append(i_episode)
-            try:
-                os.makedirs('results/training_results/training'+str(i_training)+'/episode'+str(i_episode))
-            except:
-                pass
-            
-            torch.save(agent.actor_local.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth')
-            torch.save(agent.critic_local.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth')
-            torch.save(agent.actor_optimizer.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_optimizer_'+str(i_episode)+'.pth')
-            torch.save(agent.critic_optimizer.state_dict(), 'results/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
-
-        if (i_episode % settings['periodic_test']) == 0 :
-
-            ACTION = policy_heatmap(agent, episode_number = i_episode)
-
-            # Perform evaluation test
-            # evaluations.append(eval_policy(agent))
-            # try:
-            #     os.makedirs('results/testing_results/training'+str(i_training))
-            # except:
-            #     pass
-            # np.save('results/testing_results/training'+str(i_training)+'/eval.npy',evaluations)
-                       
+                pass                    
     return scores_list, checkpoints_list
 
 def policy_heatmap(agent, T = 300, episode_number = 0):
@@ -325,7 +329,7 @@ print("Theoretical Battery Capacity (Ah): ", env.OneC)
 
 # Seeding
 # i_seed = args.id
-i_seed = 0
+i_seed = 1
 i_training = i_seed
 np.random.seed(i_seed)
 torch.manual_seed(i_seed)
