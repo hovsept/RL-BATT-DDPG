@@ -213,7 +213,7 @@ def ddpg(n_episodes=3000, i_training=1):
                     SOCn_VEC.append(env.info['SOCn'])
                     CURRENT_VEC.append(applied_action)
                     ETAs_VEC.append(env.etasLn)
-                    print(i_episode, applied_action, next_voltage, next_soc, next_temperature.item(), env.etasLn, reward)
+                    # print(i_episode, applied_action, next_voltage, next_soc, next_temperature.item(), env.etasLn, reward)
                     #update the agent according to norm_states, norm_next_states, reward, and norm_action
                     agent.step(norm_out, norm_action, reward, norm_next_out, done)
                     try:

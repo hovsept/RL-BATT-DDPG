@@ -110,9 +110,9 @@ def trajectory(agent, H):
     norm_out = normalize_outputs(soc,voltage,temperature)
 
     ACTION_VEC=[]
-    SOC_VEC=[]
-    T_VEC=[]
-    VOLTAGE_VEC=[]
+    SOC_VEC=[soc]
+    T_VEC=[temperature]
+    VOLTAGE_VEC=[voltage]
     RETURN_VALUE=0
     TIME_VEC = []
     done=False
@@ -184,9 +184,9 @@ def trajectory(agent, H):
         if done:
             break
 
-    traj = np.vstack((np.array(SOC_VEC), np.array(etasLn_sim)[:,0],
-                       np.array(VOLTAGE_VEC), np.array(T_VEC)))
-    traj = np.vstack((np.array(SOC_VEC), np.array(etasLn_sim)[:,0],
+    # traj = np.vstack((np.array(SOC_VEC), np.array(etasLn_sim)[:,0],
+    #                    np.array(VOLTAGE_VEC), np.array(T_VEC)))
+    traj = np.vstack((np.array(SOC_VEC), np.hstack((etasLn_sim[0],np.array(etasLn_sim)[:,0])),
                     np.array(VOLTAGE_VEC)))
     # traj = np.vstack((np.array(SOC_VEC), np.array([arr[-1] for arr in j_sr_sim]).T))
     # traj = np.vstack((np.array(SOC_VEC), np.array([arr[-1] for arr in cssn_sim]).T))
@@ -200,7 +200,7 @@ def trajectory(agent, H):
     return traj
 
 H = 200
-N = 500
+N = 1000
 n_vars = 3
 all_trajs = np.zeros((N,n_vars,H))
 all_time = np.zeros((N))
@@ -218,11 +218,13 @@ for i in tqdm(range(N)):
         except:
             pass
 
+np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, allow_pickle=True)
 
-all_trajs = np.load('traj_training1_ep1500.npy')
+# all_trajs = np.load('traj_training1_ep1500.npy')
 
 min_eta_s = -0.03
 SOC_threshold = 0.8
+
 def direct_partition(all_trajs, min_eta_s, SOC_threshold):
     all_trajs_part = np.empty((N, H), dtype='U4')
     for i in tqdm(range(N)):
@@ -270,7 +272,7 @@ all_trajs_part = direct_partition(all_trajs, min_eta_s,SOC_threshold)
 #         unsafe_traj.append(i)
 
 
-ell = 10
+ell = 30
 
 def get_ell_sequences(all_trajs_part, ell,H):
     ell_seq_trajectory = set()
@@ -379,7 +381,7 @@ else:
 
 fig, ax = plt.subplots()
 for seq in all_trajs[:]:
-    ax.plot(seq[0],seq[1])
+    ax.plot(seq[0][1:],seq[1][1:])
     # ax.fill_between(seq[0],-0.04,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
     # ax.fill_between(seq[0],-0.04, min_eta_s, where = seq[0]>=SOC_threshold, color = "palegreen")
 
@@ -411,7 +413,7 @@ fig.tight_layout()
 
 fig, ax = plt.subplots()
 for seq in all_trajs[:]:
-    ax.plot(seq[2],seq[1])
+    ax.plot(seq[2][1:],seq[1][1:])
     # ax.fill_between(seq[0],-0.04,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
     # ax.fill_between(seq[0],-0.04, min_eta_s, where = seq[0]>=SOC_threshold, color = "palegreen")
 
@@ -493,6 +495,11 @@ print('-'*80)
 ############################################################
 # Backwards Reachability
 ############################################################
+
+self_loops = set()
+for traj in ell_seq_trajectory:
+    if all(i==traj[0] for i in traj):
+        self_loops.add(traj)
 
 def pre(state, ell_seq_trajectory):
     #Returns set of ell-sequences that transition to state in one step
