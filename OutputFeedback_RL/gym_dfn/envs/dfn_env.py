@@ -105,13 +105,13 @@ class DFN(discrete.DiscreteEnv):
 		#==============================================================================
 
 		#Initial SEI Film Resistance
-		p['R_f_n'] = np.random.uniform(1e-4, 1e-2)
-		p['D_s_n0'] = np.random.uniform(2.5e-15, 3.5e-11) # Diffusion coeff for solid in neg. electrode, [m^2/s]
-		p['D_s_p0'] = np.random.uniform(2.24e-15, 3.5e-11) # Diffusion coeff for solid in pos. electrode, [m^2/s]
+		p['R_f_n'] = np.random.uniform(1e-5, 1e-2)
+		p['D_s_n0'] = np.random.uniform(2.5e-15, 3.5e-12) # Diffusion coeff for solid in neg. electrode, [m^2/s]
+		p['D_s_p0'] = np.random.uniform(2.24e-15, 3.5e-12) # Diffusion coeff for solid in pos. electrode, [m^2/s]
 		p['sig_n'] = np.random.uniform(90,110)    # Conductivity of solid in neg. electrode, [1/Ohms*m]
 		p['sig_p'] = np.random.uniform(0.9,0.11)  # Conductivity of solid in pos. electrode, [1/Ohms*m]
 		p['k_n0'] = np.random.uniform(4.0e-06, 8.0e-05)  # Reaction rate in neg. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
-		p['k_p0'] = np.random.uniform(2.5e-07,1.0e-05)  # Reaction rate in pos. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
+		p['k_p0'] = np.random.uniform(2.5e-07,5.0e-06)  # Reaction rate in pos. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
 
 		p['t_plus'] = np.random.uniform(0.35, 0.55)		# Transference number
 		p['brug'] = np.random.uniform(1.7,1.9)		# Bruggeman porosity

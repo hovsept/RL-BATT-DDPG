@@ -143,23 +143,23 @@ def eval_policy(policy, eval_episodes=10):
 
 
 # function for training the ddpg agent
-def ddpg(n_episodes=3000, i_training=1):
+def ddpg(n_episodes=3000, i_training=1, start_episode = 0, end_episode = 1500):
     scores_list = []
     checkpoints_list=[]
 
 
     # Save the initial parameters of actor-critic networks.
-    i_episode = 0
+    i_episode = start_episode
     checkpoints_list.append(i_episode)
     try:
-        os.makedirs('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode))
+        os.makedirs('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode))
     except:
         pass
     
-    torch.save(agent.actor_local.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth')
-    torch.save(agent.critic_local.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth')
-    torch.save(agent.actor_optimizer.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_optimizer_'+str(i_episode)+'.pth')
-    torch.save(agent.critic_optimizer.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
+    torch.save(agent.actor_local.state_dict(), 'OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth')
+    torch.save(agent.critic_local.state_dict(), 'OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth')
+    torch.save(agent.actor_optimizer.state_dict(), 'OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_optimizer_'+str(i_episode)+'.pth')
+    torch.save(agent.critic_optimizer.state_dict(), 'OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
 
     # Evaluate the initial (untrained) policy
     # print('Evaluate first')
@@ -167,7 +167,7 @@ def ddpg(n_episodes=3000, i_training=1):
     # ipdb.set_trace()
     # evaluations = []
     
-    for i_episode in range(1, n_episodes+1):
+    for i_episode in range(start_episode, end_episode+1):
         episode_done = False
         while episode_done == False:
             try:         
@@ -240,14 +240,14 @@ def ddpg(n_episodes=3000, i_training=1):
 
                     checkpoints_list.append(i_episode)
                     try:
-                        os.makedirs('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode))
+                        os.makedirs('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode))
                     except:
                         pass
                     
-                    torch.save(agent.actor_local.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth')
-                    torch.save(agent.critic_local.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth')
-                    torch.save(agent.actor_optimizer.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_optimizer_'+str(i_episode)+'.pth')
-                    torch.save(agent.critic_optimizer.state_dict(), 'results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
+                    torch.save(agent.actor_local.state_dict(), 'OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth')
+                    torch.save(agent.critic_local.state_dict(), 'OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth')
+                    torch.save(agent.actor_optimizer.state_dict(), 'OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_optimizer_'+str(i_episode)+'.pth')
+                    torch.save(agent.critic_optimizer.state_dict(), 'OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth')
 
                 if (i_episode % settings['periodic_test']) == 0 :
 
@@ -270,8 +270,8 @@ def policy_heatmap(agent, T = 300, episode_number = 0):
     print("Generating Heatmap of Policy with T = "+ str(T))
     print("------------------------------------------------")
 
-    SOC_grid = np.linspace(0,1,10)
-    V_grid = np.linspace(2.7,4.7,10)
+    SOC_grid = np.linspace(0,1,20)
+    V_grid = np.linspace(2.7,4.7,20)
 
     ACTION = np.zeros((len(SOC_grid)))
 
@@ -303,14 +303,14 @@ def policy_heatmap(agent, T = 300, episode_number = 0):
     plt.clf()
     plt.imshow(ACTION, interpolation='nearest')
     plt.colorbar()
-    plt.xticks(x_positions, np.trunc(100*SOC_grid)/100)
+    plt.xticks(x_positions, np.trunc(100*SOC_grid)/100, rotation=-90)
     plt.yticks(y_positions, np.trunc(100*np.flip(V_grid))/100)
     plt.tight_layout()
     plt.title('RL Policy, T = ' + str(T) + ' Episode '+ str(episode_number))
     plt.xlabel('SOC')
     plt.ylabel('Voltage (V)')
     # plt.show()
-    plt.savefig('Policy_Episode'+str(episode_number)+'.png', bbox_inches='tight')
+    plt.savefig('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/Policy_Episode'+str(episode_number)+'.png', bbox_inches='tight')
     return ACTION
 
 
@@ -342,22 +342,23 @@ total_returns_list_with_exploration=[]
 #assign the agent which is a ddpg
 agent = Agent(state_size=3, action_size=1, random_seed=i_training)  # the number of state is 496.
 
-start_episode = 0
+start_episode = 1500
 if start_episode !=0:
-    agent.actor_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_'+str(start_episode)+'.pth',map_location = 'cpu'))
-    agent.actor_optimizer.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_optimizer_'+str(start_episode)+'.pth',map_location = 'cpu'))
-    agent.critic_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_'+str(start_episode)+'.pth',map_location = 'cpu'))
-    agent.critic_optimizer.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_optimizer_'+str(start_episode)+'.pth', map_location = 'cpu'))
+    agent.actor_local.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_'+str(start_episode)+'.pth',map_location = 'cpu'))
+    agent.actor_optimizer.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_optimizer_'+str(start_episode)+'.pth',map_location = 'cpu'))
+    agent.critic_local.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_'+str(start_episode)+'.pth',map_location = 'cpu'))
+    agent.critic_optimizer.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_optimizer_'+str(start_episode)+'.pth', map_location = 'cpu'))
 
-ACTION = policy_heatmap(agent, episode_number = 1500)
+
+ACTION = policy_heatmap(agent, episode_number = 2000)
 
 # call the function for training the agent
-returns_list, checkpoints_list = ddpg(n_episodes=settings['number_of_training_episodes'], i_training=i_training)
+returns_list, checkpoints_list = ddpg(n_episodes=settings['number_of_training_episodes'], i_training=i_training, start_episode = start_episode, end_episode = start_episode + 1500)
 total_returns_list_with_exploration.append(returns_list)
     
 
-with open("results/training_results/total_returns_list_with_exploration.txt", "wb") as fp:   #Pickling, \\ -> / for mac.
+with open("results_hov/training_results/total_returns_list_with_exploration.txt", "wb") as fp:   #Pickling, \\ -> / for mac.
    pickle.dump(total_returns_list_with_exploration, fp)
 
-with open("results/training_results/checkpoints_list.txt", "wb") as fp:   #Pickling
+with open("results_hov/training_results/checkpoints_list.txt", "wb") as fp:   #Pickling
    pickle.dump(checkpoints_list, fp)

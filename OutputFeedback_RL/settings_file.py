@@ -7,7 +7,7 @@ settings={}
 settings['sample_time']=30
 settings['periodic_test']=10 # number of save points.
 
-settings['number_of_training_episodes']=1500
+settings['number_of_training_episodes']=2000
 settings['number_of_training']= 3 # Number of training.
 settings['episodes_number_test']=10 # Number of testing.
 

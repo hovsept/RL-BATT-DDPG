@@ -56,8 +56,8 @@ def policy_heatmap(agent, T = 300, max_current = -2.5*3.4, min_current = 0.):
     print("Generating Heatmap of Policy with T = "+ str(T))
     print("------------------------------------------------")
 
-    SOC_grid = np.linspace(0,1,10)
-    V_grid = np.linspace(2.7,4.7,10)
+    SOC_grid = np.linspace(0,1,20)
+    V_grid = np.linspace(2.7,4.7,20)
 
     ACTION = np.zeros((len(SOC_grid)))
 
@@ -89,7 +89,7 @@ def policy_heatmap(agent, T = 300, max_current = -2.5*3.4, min_current = 0.):
 
     plt.imshow(ACTION, interpolation='nearest')
     plt.colorbar()
-    plt.xticks(x_positions, np.trunc(100*SOC_grid)/100)
+    plt.xticks(x_positions, np.trunc(100*SOC_grid)/100, rotation = -90)
     plt.yticks(y_positions, np.trunc(100*np.flip(V_grid))/100)
     plt.tight_layout()
     plt.title('RL Policy, T = ' + str(T))
@@ -218,9 +218,9 @@ for i in tqdm(range(N)):
         except:
             pass
 
-np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, allow_pickle=True)
+# np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, allow_pickle=True)
 
-# all_trajs = np.load('traj_training1_ep1500.npy')
+all_trajs = np.load('traj_training1_ep1500.npy')
 
 min_eta_s = -0.03
 SOC_threshold = 0.8
@@ -233,10 +233,12 @@ def direct_partition(all_trajs, min_eta_s, SOC_threshold):
             soc, eta_sr, V = all_trajs[i,0,j], all_trajs[i,1,j], all_trajs[i,2,j]
             if soc<=0.5:
                 soc_part = 'a'
-            elif soc>0.5 and soc <= SOC_threshold:
+            elif soc>0.5 and soc <= 0.65:
                 soc_part = 'b'
-            else:
+            elif soc>0.65 and soc<=SOC_threshold:
                 soc_part = 'c'
+            else:
+                soc_part = 'd'
 
             if eta_sr<= min_eta_s:
                 eta_part = 'a'
@@ -247,11 +249,11 @@ def direct_partition(all_trajs, min_eta_s, SOC_threshold):
             else:
                 eta_part = 'd'
 
-            if V<=3.0:
+            if V<=3.6:
                 V_part = 'a'
-            elif V>3.0 and V<=3.7:
+            elif V>3.6 and V<=3.9:
                 V_part = 'b'
-            elif V>3.7 and V<=4.2:
+            elif V>3.9 and V<=4.2:
                 V_part = 'c'
             else:
                 V_part = 'd'
@@ -272,7 +274,7 @@ all_trajs_part = direct_partition(all_trajs, min_eta_s,SOC_threshold)
 #         unsafe_traj.append(i)
 
 
-ell = 30
+ell = 25
 
 def get_ell_sequences(all_trajs_part, ell,H):
     ell_seq_trajectory = set()
@@ -443,7 +445,7 @@ fig.tight_layout()
 print("Upper bound of complexity ", num_sets)
 
 print('-'*80)
-epsi_up = eps_general(k=num_sets, N=N, beta=1e-12)
+epsi_up = eps_general(k=num_sets, N=N, beta=1e-6)
 print(f'Epsilon Bound using complexity: {epsi_up}')
 
 print('-'*80)
@@ -549,7 +551,8 @@ soc_init = soc_pre.intersection(ell_seq_init)
 eta_init = eta_pre.intersection(ell_seq_init)
 volt_init = volt_pre.intersection(ell_seq_init)
 
-        
+eta_counterex = set(init[-1][-1] for init in eta_init)
+volt_counterex = set(init[-1][-1] for init in volt_init)
 
 
 
