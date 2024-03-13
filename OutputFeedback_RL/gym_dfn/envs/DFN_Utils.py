@@ -7,7 +7,7 @@ Created on Fri Jun  1 16:30:29 2018
 """
 th=1e-6
 import numpy as np
-from scipy import linalg, matrix
+# from scipy import linalg, matrix
 import scipy.io as sio
 from scipy.interpolate import CubicSpline #import interp1d
 from scipy.interpolate import interpolate

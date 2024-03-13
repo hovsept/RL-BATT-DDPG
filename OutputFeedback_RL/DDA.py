@@ -57,7 +57,7 @@ def policy_heatmap(agent, T = 300, max_current = -2.5*3.4, min_current = 0.):
     print("------------------------------------------------")
 
     SOC_grid = np.linspace(0,1,20)
-    V_grid = np.linspace(2.7,4.7,20)
+    V_grid = np.linspace(2.7,4.3,20)
 
     ACTION = np.zeros((len(SOC_grid)))
 
@@ -180,6 +180,9 @@ def trajectory(agent, H):
         TIME_VEC.append(tt)
         VOLTAGE_VEC.append(env.info['V'])
         norm_out=norm_next_out
+
+        # if env.info['V']>4.2:
+        #     print(p)
         
         if done:
             break
@@ -200,7 +203,7 @@ def trajectory(agent, H):
     return traj
 
 H = 200
-N = 1000
+N = 500
 n_vars = 3
 all_trajs = np.zeros((N,n_vars,H))
 all_time = np.zeros((N))
@@ -220,7 +223,7 @@ for i in tqdm(range(N)):
 
 # np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, allow_pickle=True)
 
-all_trajs = np.load('traj_training1_ep1500.npy')
+# all_trajs = np.load('traj_training1_ep1500.npy')
 
 min_eta_s = -0.03
 SOC_threshold = 0.8
