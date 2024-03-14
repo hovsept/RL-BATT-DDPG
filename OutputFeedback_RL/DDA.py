@@ -41,7 +41,7 @@ def denormalize_input(input_value, min_OUTPUT_value, max_OUTPUT_value):
 agent = Agent(state_size=3, action_size=1, random_seed=1)    
 
 # Load
-i_episode=1500
+i_episode=2000
 
 i_training=1
 agent.actor_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth',map_location='cpu'))
@@ -221,7 +221,7 @@ for i in tqdm(range(N)):
         except:
             pass
 
-# np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, allow_pickle=True)
+np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, allow_pickle=True)
 
 # all_trajs = np.load('traj_training1_ep1500.npy')
 
