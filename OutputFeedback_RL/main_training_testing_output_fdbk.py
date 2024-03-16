@@ -172,7 +172,7 @@ def ddpg(n_episodes=3000, i_training=1, start_episode = 0, end_episode = 1500):
         while episode_done == False:
             try:         
                 #random initial values
-                initial_conditions['init_v']=np.random.uniform(low=2.7, high=4.1)
+                initial_conditions['init_v']=np.random.uniform(low=2.7, high=3.6)
                 initial_conditions['init_t']=np.random.uniform(low=298, high=305)
 
                 # reset the environment and the agent
@@ -329,7 +329,7 @@ print("Theoretical Battery Capacity (Ah): ", env.OneC)
 
 # Seeding
 # i_seed = args.id
-i_seed = 1
+i_seed = 2
 i_training = i_seed
 np.random.seed(i_seed)
 torch.manual_seed(i_seed)
@@ -343,17 +343,17 @@ total_returns_list_with_exploration=[]
 agent = Agent(state_size=3, action_size=1, random_seed=i_training)  # the number of state is 496.
 
 start_episode = 0
-if start_episode !=0:
-    agent.actor_local.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_'+str(start_episode)+'.pth',map_location = 'cpu'))
-    agent.actor_optimizer.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_optimizer_'+str(start_episode)+'.pth',map_location = 'cpu'))
-    agent.critic_local.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_'+str(start_episode)+'.pth',map_location = 'cpu'))
-    agent.critic_optimizer.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_optimizer_'+str(start_episode)+'.pth', map_location = 'cpu'))
+# if start_episode !=0 or i_training==2 :
+#     agent.actor_local.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_'+str(start_episode)+'.pth',map_location = 'cpu'))
+#     agent.actor_optimizer.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_optimizer_'+str(start_episode)+'.pth',map_location = 'cpu'))
+#     agent.critic_local.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_'+str(start_episode)+'.pth',map_location = 'cpu'))
+#     agent.critic_optimizer.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_optimizer_'+str(start_episode)+'.pth', map_location = 'cpu'))
 
 
-ACTION = policy_heatmap(agent, episode_number = start_episode)
+# ACTION = policy_heatmap(agent, episode_number = start_episode)
 
 # call the function for training the agent
-returns_list, checkpoints_list = ddpg(n_episodes=settings['number_of_training_episodes'], i_training=i_training, start_episode = start_episode, end_episode = 2000)
+returns_list, checkpoints_list = ddpg(n_episodes=settings['number_of_training_episodes'], i_training=i_training, start_episode = start_episode, end_episode = 1500)
 total_returns_list_with_exploration.append(returns_list)
 
 

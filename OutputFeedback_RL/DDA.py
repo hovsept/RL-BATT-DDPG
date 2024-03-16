@@ -19,6 +19,7 @@ from gym_dfn.envs.dfn_env import *
 from gym_dfn.envs.ParamFile_LCO2 import p
 
 from settings_file import*
+from collections import Counter
 
 def normalize_outputs(soc, voltage, temperature):
 
@@ -41,7 +42,7 @@ def denormalize_input(input_value, min_OUTPUT_value, max_OUTPUT_value):
 agent = Agent(state_size=3, action_size=1, random_seed=1)    
 
 # Load
-i_episode=2000
+i_episode=1500
 
 i_training=1
 agent.actor_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth',map_location='cpu'))
@@ -57,7 +58,7 @@ def policy_heatmap(agent, T = 300, max_current = -2.5*3.4, min_current = 0.):
     print("------------------------------------------------")
 
     SOC_grid = np.linspace(0,1,20)
-    V_grid = np.linspace(2.7,4.3,20)
+    V_grid = np.linspace(2.7,4.7,20)
 
     ACTION = np.zeros((len(SOC_grid)))
 
@@ -180,9 +181,6 @@ def trajectory(agent, H):
         TIME_VEC.append(tt)
         VOLTAGE_VEC.append(env.info['V'])
         norm_out=norm_next_out
-
-        # if env.info['V']>4.2:
-        #     print(p)
         
         if done:
             break
@@ -203,7 +201,7 @@ def trajectory(agent, H):
     return traj
 
 H = 200
-N = 500
+N = 2000
 n_vars = 3
 all_trajs = np.zeros((N,n_vars,H))
 all_time = np.zeros((N))
@@ -226,6 +224,7 @@ np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, 
 # all_trajs = np.load('traj_training1_ep1500.npy')
 
 min_eta_s = -0.03
+volt_max = control_settings['constraints']['voltage']['max']
 SOC_threshold = 0.8
 
 def direct_partition(all_trajs, min_eta_s, SOC_threshold):
@@ -256,7 +255,7 @@ def direct_partition(all_trajs, min_eta_s, SOC_threshold):
                 V_part = 'a'
             elif V>3.6 and V<=3.9:
                 V_part = 'b'
-            elif V>3.9 and V<=4.2:
+            elif V>3.9 and V<=volt_max:
                 V_part = 'c'
             else:
                 V_part = 'd'
@@ -277,7 +276,7 @@ all_trajs_part = direct_partition(all_trajs, min_eta_s,SOC_threshold)
 #         unsafe_traj.append(i)
 
 
-ell = 25
+ell = 30
 
 def get_ell_sequences(all_trajs_part, ell,H):
     ell_seq_trajectory = set()
@@ -554,9 +553,23 @@ soc_init = soc_pre.intersection(ell_seq_init)
 eta_init = eta_pre.intersection(ell_seq_init)
 volt_init = volt_pre.intersection(ell_seq_init)
 
-eta_counterex = set(init[-1][-1] for init in eta_init)
-volt_counterex = set(init[-1][-1] for init in volt_init)
+eta_counterex = np.zeros((3,))
+for init in eta_init:
+    if init[-1][-1] == 'a':
+        eta_counterex[0]+=1
+    elif init[-1][-1] == 'b':
+        eta_counterex[1]+=1
+    elif init[-1][-1] == 'c':
+        eta_counterex[2]+=1
 
+volt_counterex = np.zeros((3,))
+for init in volt_init:
+    if init[-1][-1] == 'a':
+        volt_counterex[0]+=1
+    elif init[-1][-1] == 'b':
+        volt_counterex[1]+=1
+    elif init[-1][-1] == 'c':
+        volt_counterex[2]+=1
 
 
 
