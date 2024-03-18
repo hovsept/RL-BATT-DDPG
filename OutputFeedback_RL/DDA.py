@@ -219,7 +219,7 @@ for i in tqdm(range(N)):
         except:
             pass
 
-np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, allow_pickle=True)
+# np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, allow_pickle=True)
 
 # all_trajs = np.load('traj_training1_ep1500.npy')
 
