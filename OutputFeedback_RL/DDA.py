@@ -221,7 +221,7 @@ for i in tqdm(range(N)):
 
 # np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, allow_pickle=True)
 
-# all_trajs = np.load('traj_training1_ep1500.npy')
+all_trajs = np.load('traj_training1_ep1500.npy')
 
 min_eta_s = -0.03
 volt_max = control_settings['constraints']['voltage']['max']
@@ -276,7 +276,7 @@ all_trajs_part = direct_partition(all_trajs, min_eta_s,SOC_threshold)
 #         unsafe_traj.append(i)
 
 
-ell = 30
+ell = 20
 
 def get_ell_sequences(all_trajs_part, ell,H):
     ell_seq_trajectory = set()
@@ -555,20 +555,20 @@ volt_init = volt_pre.intersection(ell_seq_init)
 
 eta_counterex = np.zeros((3,))
 for init in eta_init:
-    if init[-1][-1] == 'a':
+    if init[0][-1] == 'a':
         eta_counterex[0]+=1
-    elif init[-1][-1] == 'b':
+    elif init[0][-1] == 'b':
         eta_counterex[1]+=1
-    elif init[-1][-1] == 'c':
+    elif init[0][-1] == 'c':
         eta_counterex[2]+=1
 
 volt_counterex = np.zeros((3,))
 for init in volt_init:
-    if init[-1][-1] == 'a':
+    if init[0][-1] == 'a':
         volt_counterex[0]+=1
-    elif init[-1][-1] == 'b':
+    elif init[0][-1] == 'b':
         volt_counterex[1]+=1
-    elif init[-1][-1] == 'c':
+    elif init[0][-1] == 'c':
         volt_counterex[2]+=1
 
 
