@@ -39,14 +39,36 @@ def denormalize_input(input_value, min_OUTPUT_value, max_OUTPUT_value):
     
     return output_value
 
+switched_controller = False
 agent = Agent(state_size=3, action_size=1, random_seed=1)    
 
 # Load
-i_episode=1500
+i_episode=3000
 
-i_training=1
+i_training=10
 agent.actor_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth',map_location='cpu'))
 agent.critic_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth',map_location='cpu'))
+
+agent1 = Agent(state_size=3, action_size=1, random_seed=1)
+i_episode = 2000
+i_training = 1
+agent1.actor_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth',map_location='cpu'))
+agent1.critic_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth',map_location='cpu'))
+
+agent2 = Agent(state_size=3, action_size=1, random_seed=1)
+i_episode = 2560
+i_training = 2
+agent2.actor_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth',map_location='cpu'))
+agent2.critic_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth',map_location='cpu'))
+
+agent3 = Agent(state_size=3, action_size=1, random_seed=1)
+i_episode = 3000
+i_training = 5
+agent3.actor_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth',map_location='cpu'))
+agent3.critic_local.load_state_dict(torch.load('results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth',map_location='cpu'))
+
+    
+
 
 print('-'*80)
 print('Episode ', i_episode, ', Training ', i_training)
@@ -99,13 +121,23 @@ def policy_heatmap(agent, T = 300, max_current = -2.5*3.4, min_current = 0.):
     plt.show()
     return ACTION
 
-ACTION = policy_heatmap(agent,T = 300)
+if switched_controller == False:
+    ACTION = policy_heatmap(agent,T = 300)
 
-def trajectory(agent, H):
+def trajectory(agent, agent1, agent2, agent3, H, switched_controller):
     env = DFN(sett=settings, cont_sett=control_settings)
 
     init_V=np.random.uniform(low=2.7, high=4.1)
     init_T=np.random.uniform(low=290, high=305)
+
+    if switched_controller == True:
+        if init_V <= 3.6:
+            agent = agent2
+        elif init_V > 3.6 and init_V <= 3.9:
+            agent = agent1
+        elif init_V>3.9:
+            agent = agent3
+
     _ = env.reset(init_v = init_V, init_t=init_T)
     soc, voltage, temperature = get_output_observations(env)
     norm_out = normalize_outputs(soc,voltage,temperature)
@@ -138,7 +170,7 @@ def trajectory(agent, H):
     tt=0
     TIME_VEC.append(tt)
 
-    for t in range(H):
+    for t in range(H-1):
         # the exploration noise has been disabled
         norm_action = agent.act(norm_out, add_noise=False)
         
@@ -150,7 +182,7 @@ def trajectory(agent, H):
         _,reward,done,_ = env.step(applied_action)
         next_soc, next_voltage, next_temperature = get_output_observations(env)
         norm_next_out = normalize_outputs(next_soc, next_voltage, next_temperature.item())
-        
+
         RETURN_VALUE+=reward
         
         #save the simulation vectors
@@ -184,13 +216,8 @@ def trajectory(agent, H):
         
         if done:
             break
-
-    # traj = np.vstack((np.array(SOC_VEC), np.array(etasLn_sim)[:,0],
-    #                    np.array(VOLTAGE_VEC), np.array(T_VEC)))
     traj = np.vstack((np.array(SOC_VEC), np.hstack((etasLn_sim[0],np.array(etasLn_sim)[:,0])),
                     np.array(VOLTAGE_VEC)))
-    # traj = np.vstack((np.array(SOC_VEC), np.array([arr[-1] for arr in j_sr_sim]).T))
-    # traj = np.vstack((np.array(SOC_VEC), np.array([arr[-1] for arr in cssn_sim]).T))
 
     while traj.shape[-1]<H:
         traj_x = np.zeros((traj.shape[0], traj.shape[1]+1))
@@ -200,8 +227,8 @@ def trajectory(agent, H):
             
     return traj
 
-H = 200
-N = 2000
+H = 120
+N = 50
 n_vars = 3
 all_trajs = np.zeros((N,n_vars,H))
 all_time = np.zeros((N))
@@ -214,16 +241,16 @@ for i in tqdm(range(N)):
     check = False
     while check==False:
         try:
-            all_trajs[i,:,:] = trajectory(agent,H)
+            all_trajs[i,:,:] = trajectory(agent, agent1, agent2, agent3 , H, switched_controller)
             check=True
         except:
             pass
 
 # np.save('traj_training'+str(i_training)+'_ep'+str(i_episode)+'.npy', all_trajs, allow_pickle=True)
 
-all_trajs = np.load('traj_training1_ep1500.npy')
+# all_trajs = np.load('traj_training10_ep3000.npy')
 
-min_eta_s = -0.03
+min_eta_s = -0.21
 volt_max = control_settings['constraints']['voltage']['max']
 SOC_threshold = 0.8
 
@@ -251,14 +278,31 @@ def direct_partition(all_trajs, min_eta_s, SOC_threshold):
             else:
                 eta_part = 'd'
 
-            if V<=3.6:
+            # if V<=3.6:
+            #     V_part = 'a'
+            # elif V>3.6 and V<=3.9:
+            #     V_part = 'b'
+            # elif V>3.9 and V<=volt_max:
+            #     V_part = 'c'
+            # else:
+            #     V_part = 'd'
+
+            if V<=2.9:
                 V_part = 'a'
-            elif V>3.6 and V<=3.9:
+            elif V>2.9 and V<= 3.1:
                 V_part = 'b'
-            elif V>3.9 and V<=volt_max:
+            elif V>3.1 and V<=3.3:
                 V_part = 'c'
-            else:
+            elif V>3.5 and V<=3.7:
                 V_part = 'd'
+            elif V>3.7 and V<=3.9:
+                V_part = 'e'
+            elif V>3.9 and V <=4.1:
+                V_part = 'f'
+            elif V>4.1 and V<=volt_max:
+                V_part = 'g'
+            else:
+                V_part = 'h'
 
             all_trajs_part[i,j] = soc_part + eta_part + V_part
 
@@ -276,7 +320,7 @@ all_trajs_part = direct_partition(all_trajs, min_eta_s,SOC_threshold)
 #         unsafe_traj.append(i)
 
 
-ell = 20
+ell = 10
 
 def get_ell_sequences(all_trajs_part, ell,H):
     ell_seq_trajectory = set()
@@ -386,8 +430,8 @@ else:
 fig, ax = plt.subplots()
 for seq in all_trajs[:]:
     ax.plot(seq[0][1:],seq[1][1:])
-    # ax.fill_between(seq[0],-0.04,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
-    # ax.fill_between(seq[0],-0.04, min_eta_s, where = seq[0]>=SOC_threshold, color = "palegreen")
+    ax.fill_between(seq[0],-0.25,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
+    ax.fill_between(seq[0], min_eta_s, 0.0, where = seq[0]>=SOC_threshold, color = "palegreen")
 
 ax.set_xlabel('SOC')
 ax.set_ylabel('eta_sr')
@@ -402,8 +446,8 @@ fig.tight_layout()
 fig, ax = plt.subplots()
 for seq in all_trajs[:]:
     ax.plot(seq[0],seq[2])
-    # ax.fill_between(seq[0],-0.04,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
-    # ax.fill_between(seq[0],-0.04, min_eta_s, where = seq[0]>=SOC_threshold, color = "palegreen")
+    ax.fill_between(seq[0],volt_max,  4.35, where=seq[0]>=0, color = "lightcoral")
+    ax.fill_between(seq[0],2.7, volt_max, where = seq[0]>=SOC_threshold, color = "palegreen")
 
 ax.set_xlabel('SOC')
 ax.set_ylabel('Voltage (V)')
@@ -415,34 +459,19 @@ fig.tight_layout()
 # 2D-Visualization for V and eta_sr trajectories
 ################################################
 
-fig, ax = plt.subplots()
-for seq in all_trajs[:]:
-    ax.plot(seq[2][1:],seq[1][1:])
-    # ax.fill_between(seq[0],-0.04,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
-    # ax.fill_between(seq[0],-0.04, min_eta_s, where = seq[0]>=SOC_threshold, color = "palegreen")
-
-ax.set_xlabel('Voltage(V)')
-ax.set_ylabel('eta_sr')
-ax.set_title("N = " + str(N))
-ax.grid()
-fig.tight_layout()
-
-
-################################################
-# Counterexamples
-################################################
-
 # fig, ax = plt.subplots()
-# for seq in all_trajs[unsafe_traj]:
-#     if seq[1][-1]< seq[1][0]:
-#         ax.plot(seq[0],seq[1])
-#         ax.fill_between(seq[0],4.75* min_eta_s,  min_eta_s, where=seq[0]>=0, color = "lightcoral")
-#         ax.fill_between(seq[0], min_eta_s,1e-6, where = seq[0]>=SOC_threshold, color = "palegreen")
+# for seq in all_trajs[:]:
+#     ax.plot(seq[2][1:],seq[1][1:])
+#     ax.fill_between(np.linspace(3,4.2,10),-0.04,  min_eta_s, where= np.linspace(3,4.2,10)>=3.0, color = "lightcoral")
+#     ax.fill_between(np.linspace(4.2,4.3,10),-0.04, 0.2, where = np.linspace(4.2,4.3,10)>=4.2, color = "lightcoral")
 
-# ax.set_xlabel('SOC')
-# ax.set_ylabel('i_s')
-# ax.set_title("Number of Counterexamples: "+ str(len(unsafe_traj)))
+# ax.set_xlabel('Voltage(V)')
+# ax.set_ylabel('eta_sr')
+# ax.set_title("N = " + str(N))
+# ax.grid()
 # fig.tight_layout()
+
+##################################################
 
 print("Upper bound of complexity ", num_sets)
 
@@ -480,6 +509,9 @@ for t in range(H):
 
     _,reward,done,_ = env.step(applied_action)
     next_soc, next_voltage, next_temperature = get_output_observations(env)
+    if next_soc >=SOC_threshold:
+        done = True
+
     norm_next_out = normalize_outputs(next_soc, next_voltage, next_temperature.item())
     
     tt += env.dt
@@ -518,15 +550,15 @@ def pre_set(state, ell_seq_trajectory):
     #Returns set of ell-sequences that transition to state in any number of steps
     pre_state = pre(state,ell_seq_trajectory)
     pre_done = {state}
-    pre_old = pre_state
+    # pre_old = pre_state
     while True:
         for s in pre_state:
             if s not in pre_done:
-                pre_old = pre_state
-                pre_state = pre_state.union(pre(s,ell_seq_trajectory))
+                # pre_old = pre_state
+                pre_state = pre_state.union(pre(s,ell_seq_trajectory - pre_state))
                 pre_done.add(s)
         
-        if pre_old == pre_state:
+        if pre_state.union({state}) == pre_done:
             break
     return pre_state
 
@@ -539,13 +571,13 @@ soc_reach, eta_viol, volt_viol = set(), set(), set()
 soc_pre, eta_pre, volt_pre = set(), set(), set()
 
 for s in tqdm(ell_seq_trajectory):
-    if s[-1][0]=='c' and s not in soc_pre:
+    if s[-1][0]=='d' and s not in soc_pre:
         soc_reach.add(s)
         soc_pre = soc_pre.union(pre_set(s,ell_seq_trajectory))
     if s[-1][1]=='a' and s not in eta_pre:
         eta_viol.add(s)
         eta_pre = eta_pre.union(pre_set(s,ell_seq_trajectory))
-    if s[-1][2]=='d' and s not in volt_pre:
+    if s[-1][2]=='h' and s not in volt_pre:
         volt_viol.add(s)
         volt_pre = volt_pre.union(pre_set(s,ell_seq_trajectory))
 
@@ -553,7 +585,7 @@ soc_init = soc_pre.intersection(ell_seq_init)
 eta_init = eta_pre.intersection(ell_seq_init)
 volt_init = volt_pre.intersection(ell_seq_init)
 
-eta_counterex = np.zeros((3,))
+eta_counterex = np.zeros((6,))
 for init in eta_init:
     if init[0][-1] == 'a':
         eta_counterex[0]+=1
@@ -561,8 +593,14 @@ for init in eta_init:
         eta_counterex[1]+=1
     elif init[0][-1] == 'c':
         eta_counterex[2]+=1
+    elif init[0][-1] == 'd':
+        eta_counterex[3]+=1
+    elif init[0][-1] == 'e':
+        eta_counterex[4]+=1
+    elif init[0][-1] == 'f':
+        eta_counterex[5]+=1
 
-volt_counterex = np.zeros((3,))
+volt_counterex = np.zeros((6,))
 for init in volt_init:
     if init[0][-1] == 'a':
         volt_counterex[0]+=1
@@ -570,6 +608,25 @@ for init in volt_init:
         volt_counterex[1]+=1
     elif init[0][-1] == 'c':
         volt_counterex[2]+=1
+    elif init[0][-1] == 'd':
+        volt_counterex[3]+=1
+    elif init[0][-1] == 'e':
+        volt_counterex[4]+=1
+    elif init[0][-1] == 'f':
+        volt_counterex[5]+=1
+
+####################
+# Directly Obtaining initial conditions from trajectories
+####################
+
+volt_ic = []
+eta_ic = []
+
+for seq in all_trajs[:]:
+    if any(v>=volt_max for v in seq[2]):
+        volt_ic.append(seq[2][0])
+    if any(eta<=min_eta_s for eta in seq[1]):
+        eta_ic.append(seq[2][0])
 
 
 

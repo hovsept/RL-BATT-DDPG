@@ -21,6 +21,7 @@ p['L_n'] = 100.0e-6       # Thickness of negative electrode [m]
 p['L_s'] = 25.4e-6       # Thickness of separator [m]
 p['L_p'] = 100.5e-6     # Thickness of positive electrode [m]
 
+
 L_ccn = 25e-6;    # Thickness of negative current collector [m]
 L_ccp = 25e-6;    # Thickness of negative current collector [m]
 
@@ -28,6 +29,8 @@ L_ccp = 25e-6;    # Thickness of negative current collector [m]
 # Particle Radii
 p['R_s_n'] = 5.0e-06 # Radius of solid particles in negative electrode [m]
 p['R_s_p'] = 7.5e-06 # Radius of solid particles in positive electrode [m]
+# p['R_s_n'] = 1.0e-6
+# p['R_s_p'] = 1.0e-6
 
 # Volume fractions
 p['epsilon_s_n'] = 0.70 # Volume fraction in solid for neg. electrode
@@ -55,7 +58,7 @@ p['D_s_p0'] = 2.24e-14 # Diffusion coeff for solid in pos. electrode, [m^2/s]
 
 # Conductivity of solid
 p['sig_n'] = 100    # Conductivity of solid in neg. electrode, [1/Ohms*m]
-p['sig_p'] = 0.1  # Conductivity of solid in pos. electrode, [1/Ohms*m]
+p['sig_p'] = 10  # Conductivity of solid in pos. electrode, [1/Ohms*m]
 
 #==============================================================================
 # Kinetic params
@@ -66,13 +69,14 @@ p['R_f_n'] = 5.5e-3 # [CCTA-Adaption case study: 1e-4]       # Resistivity of SE
 p['R_f_p'] = 0 # [CCTA-Adaption case study: 1e-4]       # Resistivity of SEI layer, [Ohms*m^2]
 #p.R_c = 2.5e-03;%5.1874e-05/p.Area; % Contact Resistance/Current Collector Resistance, [Ohms-m^2]
 
-p['U_sr'] = 0.21 #Side-Reaction Equilibrium Potential [V]
+p['U_sr'] = 0.4 #Side-Reaction Equilibrium Potential [V]
 p['i0_sr'] = 1.178e-7 #Side-Reaction Exchange Current Density [Am^-2]
 
 # Nominal Reaction rates
 p['k_n0'] = 4.0e-05  # Reaction rate in neg. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
 p['k_p0'] = 2.5e-06  # Reaction rate in pos. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
-
+# p['k_n0'] = 1.38e-4
+# p['k_p0'] = 6.4e-5
 
 #==============================================================================
 # Thermodynamic params
@@ -105,6 +109,7 @@ p['Faraday'] = 96485.3329  # Faraday constant [Coulombs/mol]
 p['Area'] = 0.1283      # Electrode current collector area [m^2]
 p['alph'] = 0.5         # Charge transfer coefficients
 p['t_plus'] = 0.45		# Transference number
+# p['t_plus'] = 0.36
 p['brug'] = 1.8		# Bruggeman porosity
 #==============================================================================
 # Concentrations
@@ -112,6 +117,7 @@ p['brug'] = 1.8		# Bruggeman porosity
 
 p['c_s_n_max'] = 3.0e+04 # Max concentration in anode, [mol/m^3]
 p['c_s_p_max'] = 4.5e+04 # Max concentration in cathode, [mol/m^3]
+
 # p['n_Li_s'] = 3.0 # Total moles of lithium in solid phase [mol]
 p['n_Li_s'] = 3.0*p['Area']/1.425 # Total moles of lithium in solid phase [mol]
 p['c_e0'] = 1.0e3    # Electrolyte concentration [mol/m^3]

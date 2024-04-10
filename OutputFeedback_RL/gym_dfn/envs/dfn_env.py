@@ -25,7 +25,7 @@ class DFN(discrete.DiscreteEnv):
 
 
 
-	def __init__(self, sett, cont_sett, init_v=3.2, init_t=p['T_amb']):
+	def __init__(self, sett, cont_sett, init_v=3.2, init_t=p['T_amb'], param_unc = True):
 
 		#==============================================================================
 		# Environment Setting
@@ -104,18 +104,22 @@ class DFN(discrete.DiscreteEnv):
 		# Initial conditions
 		#==============================================================================
 
-		#Initial SEI Film Resistance
-		p['R_f_n'] = np.random.uniform(1e-5, 1e-2)
-		p['D_s_n0'] = np.random.uniform(2.5e-15, 3.5e-12) # Diffusion coeff for solid in neg. electrode, [m^2/s]
-		p['D_s_p0'] = np.random.uniform(2.24e-15, 3.5e-12) # Diffusion coeff for solid in pos. electrode, [m^2/s]
-		p['sig_n'] = np.random.uniform(90,110)    # Conductivity of solid in neg. electrode, [1/Ohms*m]
-		p['sig_p'] = np.random.uniform(0.9,0.11)  # Conductivity of solid in pos. electrode, [1/Ohms*m]
-		p['k_n0'] = np.random.uniform(4.0e-06, 8.0e-05)  # Reaction rate in neg. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
-		p['k_p0'] = np.random.uniform(2.5e-07,5.0e-06)  # Reaction rate in pos. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
+		# Initial SEI Film Resistance
+		if param_unc == True:
+			p['R_f_n'] = np.random.uniform(1e-5, 1e-3)
+			p['D_s_n0'] = np.random.uniform(2.5e-15, 3.5e-14) # Diffusion coeff for solid in neg. electrode, [m^2/s]
+			p['D_s_p0'] = np.random.uniform(2.24e-15, 3.5e-14) # Diffusion coeff for solid in pos. electrode, [m^2/s]
+			p['sig_n'] = np.random.uniform(90,110)    # Conductivity of solid in neg. electrode, [1/Ohms*m]
+			# p['sig_p'] = np.random.uniform(0.05,0.15)  # Conductivity of solid in pos. electrode, [1/Ohms*m]
+			p['k_n0'] = np.random.uniform(4.0e-06, 8.0e-05)  # Reaction rate in neg. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
+			p['k_p0'] = np.random.uniform(2.5e-07,5.0e-05)  # Reaction rate in pos. electrode, [(A/m^2)*(mol^3/mol)^(1+alpha)]
 
-		p['t_plus'] = np.random.uniform(0.35, 0.55)		# Transference number
-		p['brug'] = np.random.uniform(1.7,1.9)		# Bruggeman porosity
+			p['t_plus'] = np.random.uniform(0.35, 0.55)		# Transference number
+			p['brug'] = np.random.uniform(1.7,1.9)		# Bruggeman porosity
 
+		#Capacity Loss
+		self.Q_loss = 0
+		
 		# Initial condition
 		self.csn0, self.csp0 = init_cs_LCO(p, init_v) #init_cs_NMC(p, init_v) #init_cs_NMC(p, init_v) #init_cs_LCO(p, init_v)
 		self.SOCn = self.csn0/p['c_s_n_max']
@@ -123,30 +127,6 @@ class DFN(discrete.DiscreteEnv):
 
 		self.c_s_n_pade0 = np.zeros((p['PadeOrder'],1))
 		self.c_s_p_pade0 = np.zeros((p['PadeOrder'],1))
-
-		# sum_n = self.csn0
-		# max_n = p['c_s_n_max']
-		# for i in reversed(range(1,p['PadeOrder'])):
-		# 	min_n = 1/(np.sum(p['A_bulk_n'][0,0:i+1]))*sum_n
-		# 	self.c_s_n_pade0[i] = np.random.uniform(min_n, min(sum_n/p['A_bulk_n'][0,i], max_n))
-		# 	max_n = self.c_s_n_pade0[i]
-		# 	sum_n = sum_n - p['A_bulk_n'][0,i]*self.c_s_n_pade0[i]
-		# self.c_s_n_pade0[0] = sum_n/p['A_bulk_n'][0,0]
-
-		# sum_p = self.csp0
-		# max_p = p['c_s_p_max']
-		# for i in range(p['PadeOrder']-1):
-		# 	min_p = 1/(np.sum(p['A_bulk_p'][0,i:])) *sum_p
-		# 	self.c_s_p_pade0[i] = np.random.uniform(min_p, min(sum_p/p['A_bulk_p'][0,i],max_p))
-		# 	max_p = self.c_s_p_pade0[i]
-		# 	sum_p = sum_p - p['A_bulk_p'][0,i]*self.c_s_p_pade0[i]
-		# self.c_s_p_pade0[-1] = sum_p/p['A_bulk_p'][0,-1]
-
-		# self.c_s_n_pade0[0] = np.random.uniform(0, self.csn0)
-		# self.c_s_n_pade0[1] = np.random.uniform(0, self.csn0)
-
-		# self.c_s_p_pade0[0] = np.random.uniform(0, self.csp0)
-		# self.c_s_p_pade0[1] = np.random.uniform(0, self.csp0)
 
 		self.c_s_n_pade0[2] = self.csn0
 		self.c_s_p_pade0[2] = self.csp0
@@ -434,6 +414,9 @@ class DFN(discrete.DiscreteEnv):
 		self.SOCn = (float(sum(self.c_avgn)/len(self.c_avgn)) - self.theta_n0*p['c_s_n_max'])/(p['c_s_n_max']*(self.theta_n100 - self.theta_n0))
 
 		self.c_ss_n = res['info_outs'][self.cssn_idx]
+
+		#Capacity Loss Dynamics
+		self.Q_loss -= (self.dt/3600)*p['a_s_n']*p['Area']*p['Faraday']*np.sum(self.out_j_sr)*p['L_n']/(p['Nxn']-1)
 
 		# update the info dictionary
 
