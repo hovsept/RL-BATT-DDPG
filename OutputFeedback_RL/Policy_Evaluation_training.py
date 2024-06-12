@@ -4,7 +4,7 @@ Created on Fri Oct 29 2021
 
 @author: Saehong Park
 """
-
+#THIS SCRIPT IS NOT BEING USED
 
 import gym
 import random
@@ -344,24 +344,36 @@ total_returns_list_with_exploration=[]
 #assign the agent which is a ddpg
 agent = Agent(state_size=3, action_size=1, random_seed=i_training)  # the number of state is 496.
 
-start_episode = 0
-if start_episode !=0 or i_training==2 :
-    agent.actor_local.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_'+str(start_episode)+'.pth'))
-    agent.actor_optimizer.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_actor_optimizer_'+str(start_episode)+'.pth'))
-    agent.critic_local.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_'+str(start_episode)+'.pth'))
-    agent.critic_optimizer.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/checkpoint_critic_optimizer_'+str(start_episode)+'.pth'))
-    agent.memory.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(start_episode)+'/memory'+str(start_episode)+'.pkl')
+start_episode, end_episode = 200, 3000
+evaluations = []
+for i_episode in range(start_episode, end_episode + 1):
+    if (i_episode % settings['periodic_test']) == 0 :
+        print(i_episode)
+        agent.actor_local.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_'+str(i_episode)+'.pth'))
+        agent.actor_optimizer.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_actor_optimizer_'+str(i_episode)+'.pth'))
+        agent.critic_local.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_'+str(i_episode)+'.pth'))
+        agent.critic_optimizer.load_state_dict(torch.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/checkpoint_critic_optimizer_'+str(i_episode)+'.pth'))
+        agent.memory.load('OutputFeedback_RL/results_hov/training_results/training'+str(i_training)+'/episode'+str(i_episode)+'/memory'+str(i_episode)+'.pkl')
+        try:
+            evaluations.append(eval_policy(agent))
+        except:
+            evaluations.append(evaluations[-1])
+        try:
+            os.makedirs('OutputFeedback_RL/results_hov/testing_results/training'+str(i_training))
+        except:
+            pass
+        np.save('OutputFeedback_RL/results_hov/testing_results/training'+str(i_training)+'/eval1.npy',evaluations)
+        
 
 
-ACTION = policy_heatmap(agent, episode_number = start_episode)
 
 # call the function for training the agent
-returns_list, checkpoints_list = ddpg(n_episodes=settings['number_of_training_episodes'], i_training=i_training, start_episode = start_episode, end_episode = 3000)
-total_returns_list_with_exploration.append(returns_list)
+# returns_list, checkpoints_list = ddpg(n_episodes=settings['number_of_training_episodes'], i_training=i_training, start_episode = start_episode, end_episode = 3000)
+# total_returns_list_with_exploration.append(returns_list)
 
 
-with open("OutputFeedback_RL/results_hov/training_results/total_returns_list_with_exploration.txt", "wb") as fp:   #Pickling, \\ -> / for mac.
-   pickle.dump(total_returns_list_with_exploration, fp)
+# with open("OutputFeedback_RL/results_hov/training_results/total_returns_list_with_exploration.txt", "wb") as fp:   #Pickling, \\ -> / for mac.
+#    pickle.dump(total_returns_list_with_exploration, fp)
 
-with open("OutputFeedback_RL/results_hov/training_results/checkpoints_list.txt", "wb") as fp:   #Pickling
-   pickle.dump(checkpoints_list, fp)
+# with open("OutputFeedback_RL/results_hov/training_results/checkpoints_list.txt", "wb") as fp:   #Pickling
+#    pickle.dump(checkpoints_list, fp)

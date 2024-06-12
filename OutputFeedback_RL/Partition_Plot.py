@@ -1,0 +1,33 @@
+#Obviously this file can't run alone, so load stuff from the DDA code 
+
+fig, ax = plt.subplots()
+L = 100
+for seq in all_trajs[0:L]:
+    ax.plot(seq[0],seq[2], linewidth = 3.0, linestyle = 'dashed')
+    ax.fill_between(seq[0],volt_max,  4.35, where=seq[0]>=0, color = "lightcoral")
+    ax.fill_between(seq[0],2.7, volt_max, where = seq[0]>=SOC_threshold, color = "palegreen")
+ax.fill_between(np.linspace(0,0.1,10),2.7,volt_max, where = np.linspace(0,0.1,10)<=0.1, color = "paleturquoise")
+ax.fill_between(np.linspace(0.1,0.2,10),2.7,volt_max, where = np.linspace(0.1,0.2,10)<=0.2, color = "sandybrown")
+ax.fill_between(np.linspace(0.2,0.3,10),2.7,volt_max, where = np.linspace(0.2,0.3,10)<=0.3, color = "wheat")
+ax.fill_between(np.linspace(0.3,0.4,10),2.7,volt_max, where = np.linspace(0.3,0.4,10)<=0.4, color = "silver")
+ax.fill_between(np.linspace(0.4,0.45,10),2.7,volt_max, where = np.linspace(0.4,0.45,10)<=0.45, color = "violet")
+ax.fill_between(np.linspace(0.45,0.5,10),2.7,volt_max, where = np.linspace(0.45,0.5,10)<=0.5, color = "darkkhaki")
+ax.fill_between(np.linspace(0.5,0.525,10),2.7,volt_max, where = np.linspace(0.5,0.525,10)<=0.525, color = "teal")
+ax.fill_between(np.linspace(0.525,0.55,10),2.7,volt_max, where = np.linspace(0.525,0.55,10)<=0.55, color = "chocolate")
+ax.fill_between(np.linspace(0.55,0.575,10),2.7,volt_max, where = np.linspace(0.5,0.575,10)<=0.575, color = "darkturquoise")
+ax.fill_between(np.linspace(0.575,0.6,10),2.7,volt_max, where = np.linspace(0.575,0.6,10)<=0.6,  color = "bisque")
+ax.fill_between(np.linspace(0.6,0.625,10),2.7,volt_max, where = np.linspace(0.6,0.625,10)<=0.625, color = "darksalmon")
+ax.fill_between(np.linspace(0.625,0.65,10),2.7,volt_max, where = np.linspace(0.625,0.65,10)<=0.65, color = "cadetblue")
+ax.fill_between(np.linspace(0.65,0.675,10),2.7,volt_max, where = np.linspace(0.65,0.675,10)<=0.675, color = "mediumaquamarine")
+ax.fill_between(np.linspace(0.675,0.7,10),2.7,volt_max, where = np.linspace(0.675,0.7,10)<=0.7, color = "lightsalmon")
+ax.fill_between(np.linspace(0.7,0.725,10),2.7,volt_max, where = np.linspace(0.7,0.725,10)<=0.725, color = "lightsteelblue")
+ax.fill_between(np.linspace(0.725,0.75,10),2.7,volt_max, where = np.linspace(0.725,0.75,10)<=0.75, color = "powderblue")
+ax.fill_between(np.linspace(0.75,0.775,10),2.7,volt_max, where = np.linspace(0.75,0.775,10)<=0.775, color = "slategray")
+ax.fill_between(np.linspace(0.775,0.7875,10),2.7,volt_max, where = np.linspace(0.775,0.7875,10)<=0.7875, color = "peru")
+ax.fill_between(np.linspace(0.7875,0.8,10),2.7,volt_max, where = np.linspace(0.7875,0.8,10)<=0.8, color = "rosybrown")
+
+ax.set_xlabel('SOC')
+ax.set_ylabel('Voltage (V)')
+ax.grid()
+ax.set_title("N = " + str(L))
+fig.tight_layout()

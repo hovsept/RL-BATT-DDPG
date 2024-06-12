@@ -15,6 +15,7 @@ from model import Actor, Critic
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+import pickle
 
 BUFFER_SIZE = int(1e5)  # replay buffer size
 BATCH_SIZE = 64        # minibatch size
@@ -181,6 +182,7 @@ class OUNoise:
         #        print("the noise is ",self.state)
         return self.state
 
+Experience = namedtuple("Experience", ["state", "action", "reward", "next_state", "done"])
 
 class ReplayBuffer:
     """Fixed-size buffer to store experience tuples."""
@@ -195,12 +197,12 @@ class ReplayBuffer:
         self.action_size = action_size
         self.memory = deque(maxlen=buffer_size)  # internal memory (deque)
         self.batch_size = batch_size
-        self.experience = namedtuple("Experience", field_names=["state", "action", "reward", "next_state", "done"])
+        # self.experience = namedtuple("Experience", field_names=["state", "action", "reward", "next_state", "done"])
         self.seed = random.seed(seed)
     
     def add(self, state, action, reward, next_state, done):
         """Add a new experience to memory."""
-        e = self.experience(state, action, reward, next_state, done)
+        e = Experience(state, action, reward, next_state, done)
         self.memory.append(e)
     
     def sample(self):
@@ -218,3 +220,13 @@ class ReplayBuffer:
     def __len__(self):
         """Return the current size of internal memory."""
         return len(self.memory)
+    
+    def save(self, filename):
+    # Save just the memory content to avoid errors
+        with open(filename, "wb") as f:
+            pickle.dump(list(self.memory), f)
+
+    def load(self, filename):
+        # Load the memory content and reconstruct the buffer
+        with open(filename, "rb") as f:
+            self.memory = deque(pickle.load(f), maxlen=self.memory.maxlen)
